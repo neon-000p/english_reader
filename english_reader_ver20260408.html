@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>英文リーダー（Edge版）</title>
+
+  <!-- PWA: manifest & theme -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="英文リーダー">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #ede9fe 0%, #e0f2fe 100%);
+      min-height: 100vh;
+      padding: 28px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1e1b4b;
+    }
+    header p {
+      font-size: 0.82rem;
+      color: #6d6b8a;
+      margin-top: 4px;
+    }
+
+    /* Edge notice */
+    #edge-notice {
+      display: none;
+      max-width: 1140px;
+      margin: 0 auto 16px;
+      background: #fff8e1;
+      border: 1.5px solid #f59e0b;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.83rem;
+      color: #78350f;
+      text-align: center;
+    }
+
+    /* panels */
+    .panels {
+      display: flex;
+      gap: 16px;
+      max-width: 1140px;
+      margin: 0 auto 16px;
+    }
+    .panel {
+      flex: 1;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.10);
+      padding: 18px 18px 14px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .panel-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #7c3aed;
+    }
+    .char-count {
+      font-size: 0.72rem;
+      color: #a0aec0;
+    }
+
+    #en-textarea {
+      display: block;
+      width: 100%;
+      flex: 1;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.75;
+      resize: none;
+      outline: none;
+      color: #1e293b;
+      min-height: 300px;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    #en-textarea:focus { border-color: #7c3aed; }
+    #en-textarea::placeholder { color: #c4b5fd; }
+
+    #en-display {
+      display: none;
+      flex: 1;
+      border: 1.5px solid #7c3aed;
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: #1e293b;
+      min-height: 300px;
+      overflow-y: auto;
+      background: #faf9ff;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .word { display: inline; cursor: default; }
+    .word.active {
+      background: #fde68a;
+      border-radius: 3px;
+      color: #92400e;
+      font-weight: 600;
+      box-shadow: 0 0 0 2px #fde68a;
+    }
+    .word.done { color: #7c3aed; }
+
+    #trans-box {
+      flex: 1;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: #334155;
+      min-height: 300px;
+      overflow-y: auto;
+      background: #f8fafc;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .trans-placeholder { color: #c4b5fd; }
+    .trans-loading { color: #7c3aed; display: flex; align-items: center; gap: 8px; }
+    .trans-error { color: #ef4444; font-size: 0.9rem; }
+
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid #ddd6fe;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* sequence bar */
+    .seq-wrap {
+      max-width: 1140px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(99,102,241,0.08);
+      padding: 12px 18px;
+    }
+    .seq-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .seq-meta span:last-child { color: #7c3aed; font-weight: 600; }
+
+    .seq-track {
+      width: 100%;
+      height: 8px;
+      background: #ede9fe;
+      border-radius: 99px;
+      position: relative;
+      /* overflow visible so the 14px thumb is not clipped */
+    }
+    .seq-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #7c3aed, #6366f1);
+      border-radius: 99px;
+      transition: width 0.15s ease;
+      pointer-events: none;
+    }
+    .seq-thumb {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      background: #7c3aed;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(124,58,237,0.6);
+      transition: left 0.2s ease;
+      pointer-events: none;
+    }
+
+    /* controls */
+    .controls {
+      max-width: 1140px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.10);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-play {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 22px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-play:hover { opacity: 0.9; }
+    .btn-play:active { transform: scale(0.97); }
+    .btn-play.paused {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      box-shadow: 0 4px 12px rgba(249,115,22,0.3);
+    }
+
+    .btn-stop {
+      display: flex; align-items: center; gap: 7px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-stop:hover { background: #e2e8f0; }
+
+    .divider {
+      width: 1px; height: 28px;
+      background: #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    /* voice section */
+    .voice-wrap {
+      display: flex; align-items: center; gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .voice-label { font-size: 0.8rem; color: #6b7280; white-space: nowrap; }
+    #voice-select {
+      flex: 1;
+      min-width: 0;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      color: #374151;
+      outline: none;
+      cursor: pointer;
+    }
+    #voice-select:focus { border-color: #7c3aed; }
+    /* highlight Natural voices */
+    option.natural-voice {
+      font-weight: 600;
+      color: #5b21b6;
+    }
+
+    .speed-group {
+      display: flex; align-items: center; gap: 7px;
+    }
+    .speed-label { font-size: 0.8rem; color: #6b7280; white-space: nowrap; }
+    .spd {
+      background: #f1f5f9;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 13px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .spd:hover { background: #ede9fe; border-color: #c4b5fd; }
+    .spd.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+
+    /* voice badge */
+    .voice-badge {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #0078d4, #005a9e);
+      color: #fff;
+      border-radius: 6px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+    .voice-badge.show { display: flex; }
+
+    .status-msg {
+      max-width: 1140px;
+      margin: 0 auto;
+      font-size: 0.78rem;
+      color: #9ca3af;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    @media (max-width: 700px) {
+      .panels { flex-direction: column; }
+      .speed-group { flex-wrap: wrap; }
+      .controls { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📖 英文リーダー</h1>
+  <p>英文を貼り付けると和訳＋音声読み上げができます</p>
+</header>
+
+<!-- Edge check notice (shown only if not Edge) -->
+<div id="edge-notice">
+  ⚠️ このアプリはMicrosoft Edgeの高品質音声に最適化されています。Edgeでご利用ください。
+</div>
+
+<!-- Panels -->
+<!-- Sequence bar -->
+<div class="seq-wrap">
+  <div class="seq-meta">
+    <span id="seq-word-info">— / — 語</span>
+    <span id="seq-pct">0%</span>
+  </div>
+  <div class="seq-track" id="seq-track">
+    <div class="seq-fill" id="seq-fill"></div>
+    <div class="seq-thumb" id="seq-thumb" style="left:0%"></div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn-play" id="btn-play" onclick="togglePlay()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    再生
+  </button>
+  <button class="btn-stop" onclick="stopAll()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    停止
+  </button>
+
+  <div class="divider"></div>
+
+  <span class="voice-badge" id="natural-badge">
+    <!-- Edge logo SVG -->
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.86 17.86C21.3 18.27 20.67 18.6 20 18.83c-1.17.39-2.41.54-3.65.44-3.07-.26-5.8-2.01-7.5-4.57-.34-.52-.63-1.07-.86-1.65A6.54 6.54 0 0 1 7.5 10.5c0-.64.08-1.27.24-1.88C8.45 5.3 11.1 3.13 14.26 3c.52-.02 1.04.01 1.55.1A9.97 9.97 0 0 0 12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c2.54 0 4.86-.95 6.63-2.5l.01-.01c.44-.38.84-.8 1.22-1.63z"/></svg>
+    Natural
+  </span>
+
+  <div class="voice-wrap">
+    <span class="voice-label">声：</span>
+    <select id="voice-select"><option>読み込み中…</option></select>
+  </div>
+
+  <div class="speed-group">
+    <span class="speed-label">速度：</span>
+    <button class="spd active" onclick="setSpeed(1.0,this)">1.0×</button>
+    <button class="spd" onclick="setSpeed(1.2,this)">1.2×</button>
+    <button class="spd" onclick="setSpeed(1.5,this)">1.5×</button>
+    <button class="spd" onclick="setSpeed(2.0,this)">2.0×</button>
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-label">🇺🇸 English</span>
+      <span class="char-count" id="char-count">0 文字</span>
+    </div>
+    <textarea id="en-textarea" placeholder="ここに英文を貼り付けてください…" rows="12"></textarea>
+    <div id="en-display"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-label">🇯🇵 日本語訳</span>
+    </div>
+    <div id="trans-box"><span class="trans-placeholder">英文を入力すると自動で翻訳されます</span></div>
+  </div>
+</div>
+
+<div class="status-msg" id="status-msg"></div>
+
+<script>
+/* ============================================================
+   Service Worker 登録 (PWA)
+   ============================================================ */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+
+/* ============================================================
+   Edge detection
+   ============================================================ */
+const isEdge = /Edg\//.test(navigator.userAgent);
+if (!isEdge) {
+  document.getElementById('edge-notice').style.display = 'block';
+}
+
+/* ============================================================
+   State
+   ============================================================ */
+let speed   = 1.0;
+let utt     = null;
+let words   = [];
+let wordEls = [];
+let totalWords = 0;
+let currentWordIdx = -1;
+let playing = false;
+let paused  = false;
+let transTimer = null;
+let allVoices  = [];
+let bestVoices = [];   // Microsoft Natural voices (Edge)
+let otherVoices = [];
+
+/* ============================================================
+   Voice loading — prioritize Microsoft Online (Natural)
+   ============================================================ */
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  if (!voices.length) return;
+
+  allVoices = voices;
+
+  // Tier 1: Microsoft Online Natural (Edge's own TTS engine)
+  bestVoices  = voices.filter(v =>
+    v.name.includes('Microsoft') && v.name.includes('Natural') && v.lang.startsWith('en')
+  );
+  // Tier 2: Any Microsoft English voice
+  const msVoices = voices.filter(v =>
+    v.name.includes('Microsoft') && v.lang.startsWith('en') && !bestVoices.includes(v)
+  );
+  // Tier 3: Other English voices
+  otherVoices = voices.filter(v =>
+    !v.name.includes('Microsoft') && v.lang.startsWith('en')
+  );
+  // Fallback: any voice if no English
+  if (!bestVoices.length && !msVoices.length && !otherVoices.length) {
+    otherVoices = voices;
+  }
+
+  const sel = document.getElementById('voice-select');
+  sel.innerHTML = '';
+
+  // Build grouped option list
+  function addGroup(label, list, isNatural) {
+    if (!list.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = label;
+    list.forEach((v, i) => {
+      const o = document.createElement('option');
+      o.value = JSON.stringify({ name: v.name, lang: v.lang });
+      // Shorten display name for readability
+      let display = v.name
+        .replace('Microsoft ', '')
+        .replace(' Online (Natural)', ' ✦')
+        .replace('- English (', '(');
+      o.textContent = display;
+      if (isNatural) o.className = 'natural-voice';
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  }
+
+  if (bestVoices.length) {
+    addGroup('⭐ Edge Natural (高品質)', bestVoices, true);
+  }
+  if (msVoices.length) {
+    addGroup('Microsoft', msVoices, false);
+  }
+  if (otherVoices.length) {
+    addGroup('その他', otherVoices, false);
+  }
+
+  // Auto-select: prefer Jenny, then Aria, then first Natural
+  const preferNames = ['Jenny', 'Aria', 'Ryan', 'Sonia', 'Guy', 'Ana'];
+  let autoSelect = null;
+  for (const name of preferNames) {
+    autoSelect = bestVoices.find(v => v.name.includes(name));
+    if (autoSelect) break;
+  }
+  if (!autoSelect && bestVoices.length) autoSelect = bestVoices[0];
+
+  if (autoSelect) {
+    // Find the option with matching name
+    for (const opt of sel.options) {
+      try {
+        const parsed = JSON.parse(opt.value);
+        if (parsed.name === autoSelect.name) {
+          sel.value = opt.value;
+          break;
+        }
+      } catch {}
+    }
+    // Show "Natural" badge
+    document.getElementById('natural-badge').classList.add('show');
+    setStatus('Edge Natural 音声を自動選択しました：' + autoSelect.name.replace('Microsoft ', '').replace(' Online (Natural)', ''));
+  }
+
+  // Update badge when selection changes
+  sel.addEventListener('change', () => {
+    try {
+      const v = JSON.parse(sel.value);
+      const isNatural = v.name.includes('Natural');
+      const badge = document.getElementById('natural-badge');
+      badge.classList.toggle('show', isNatural);
+    } catch {}
+  });
+}
+
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+/* ============================================================
+   Get currently selected voice object
+   ============================================================ */
+function getSelectedVoice() {
+  const sel = document.getElementById('voice-select');
+  try {
+    const parsed = JSON.parse(sel.value);
+    return allVoices.find(v => v.name === parsed.name) || null;
+  } catch {
+    return null;
+  }
+}
+
+/* ============================================================
+   Textarea input + auto-translate
+   ============================================================ */
+const textarea = document.getElementById('en-textarea');
+textarea.addEventListener('input', () => {
+  const t = textarea.value;
+  document.getElementById('char-count').textContent = t.length + ' 文字';
+  clearTimeout(transTimer);
+  if (!t.trim()) { resetTransBox(); return; }
+  document.getElementById('trans-box').innerHTML =
+    '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
+  transTimer = setTimeout(() => doTranslate(t.trim()), 900);
+});
+
+function resetTransBox() {
+  document.getElementById('trans-box').innerHTML =
+    '<span class="trans-placeholder">英文を入力すると自動で翻訳されます</span>';
+}
+
+async function doTranslate(text) {
+  // Primary: Google Translate unofficial endpoint
+  const url = 'https://translate.googleapis.com/translate_a/single'
+    + '?client=gtx&sl=en&tl=ja&dt=t&q=' + encodeURIComponent(text);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const translated = data[0].map(seg => seg[0]).join('');
+    document.getElementById('trans-box').textContent = translated;
+  } catch {
+    // Fallback: MyMemory
+    try {
+      const r2 = await fetch(
+        'https://api.mymemory.translated.net/get?q='
+        + encodeURIComponent(text.slice(0, 500)) + '&langpair=en|ja'
+      );
+      const d2 = await r2.json();
+      if (d2.responseStatus === 200) {
+        document.getElementById('trans-box').textContent = d2.responseData.translatedText;
+      } else throw new Error();
+    } catch {
+      document.getElementById('trans-box').innerHTML =
+        '<span class="trans-error">⚠️ 翻訳に失敗しました。ネットワーク接続を確認してください。</span>';
+    }
+  }
+}
+
+/* ============================================================
+   Word tokenizer
+   ============================================================ */
+function buildDisplay(text) {
+  const display = document.getElementById('en-display');
+  display.innerHTML = '';
+  words = []; wordEls = [];
+
+  text.split(/(\s+)/).forEach(tok => {
+    if (/^\s+$/.test(tok)) {
+      display.appendChild(document.createTextNode(tok));
+    } else {
+      const sp = document.createElement('span');
+      sp.className = 'word';
+      sp.textContent = tok;
+      display.appendChild(sp);
+      words.push(tok);
+      wordEls.push(sp);
+    }
+  });
+  totalWords = words.length;
+}
+
+/* ============================================================
+   Sequence bar
+   ============================================================ */
+function updateBar(idx) {
+  if (totalWords === 0) return;
+  const pct = totalWords > 1 ? (idx / (totalWords - 1)) * 100 : 100;
+  document.getElementById('seq-fill').style.width  = Math.min(pct, 100) + '%';
+  document.getElementById('seq-thumb').style.left  = Math.min(pct, 100) + '%';
+  document.getElementById('seq-pct').textContent   = Math.round(pct) + '%';
+  document.getElementById('seq-word-info').textContent =
+    (idx + 1) + ' / ' + totalWords + ' 語';
+}
+
+function resetBar() {
+  document.getElementById('seq-fill').style.width  = '0%';
+  document.getElementById('seq-thumb').style.left  = '0%';
+  document.getElementById('seq-pct').textContent   = '0%';
+  document.getElementById('seq-word-info').textContent = '— / — 語';
+}
+
+/* ============================================================
+   Playback
+   ============================================================ */
+function togglePlay() {
+  if (!playing && !paused) { startPlay(); return; }
+  if (playing && !paused)  { pausePlay(); return; }
+  if (paused)               { resumePlay(); return; }
+}
+
+let fullText = '';
+let startCharOffset = 0;
+
+function startPlay(fromWordIdx = 0) {
+  const text = textarea.value.trim();
+  if (!text) { setStatus('英文を入力してください'); return; }
+
+  // Only rebuild the display when starting from the beginning,
+  // so that existing highlights are preserved on speed changes.
+  if (fromWordIdx === 0 || fullText !== text) {
+    buildDisplay(text);
+    fullText = text;
+    fromWordIdx = 0;
+  }
+  showDisplay(true);
+
+  // Compute char offset of the resume word within the full text
+  let charOffset = 0;
+  if (fromWordIdx > 0 && fromWordIdx < words.length) {
+    let cum = 0;
+    for (let i = 0; i < fromWordIdx; i++) {
+      const pos = fullText.indexOf(words[i], cum);
+      if (pos === -1) break;
+      cum = pos + words[i].length;
+    }
+    const startPos = fullText.indexOf(words[fromWordIdx], cum);
+    charOffset = startPos >= 0 ? startPos : 0;
+  }
+  startCharOffset = charOffset;
+  const speakText = fullText.substring(charOffset);
+
+  const voice = getSelectedVoice();
+  utt = new SpeechSynthesisUtterance(speakText);
+  utt.lang  = voice ? voice.lang : 'en-US';
+  if (voice) utt.voice = voice;
+  utt.rate  = speed;
+
+  currentWordIdx = fromWordIdx - 1;
+
+  utt.onstart = () => {
+    playing = true; paused = false;
+    setPlayBtn('pause');
+    const vName = voice ? voice.name.replace('Microsoft ','').replace(' Online (Natural)','') : '既定';
+    setStatus('読み上げ中… 🎙️ ' + vName);
+  };
+
+  utt.onboundary = (e) => {
+    if (e.name !== 'word') return;
+    const charIdx = e.charIndex + startCharOffset;
+    let cumLen = 0;
+    for (let i = 0; i < words.length; i++) {
+      const pos = fullText.indexOf(words[i], cumLen);
+      if (pos === -1) break;
+      if (pos <= charIdx && charIdx < pos + words[i].length) {
+        highlightWord(i); break;
+      }
+      cumLen = pos + words[i].length;
+    }
+  };
+
+  utt.onend = () => {
+    playing = false; paused = false;
+    setPlayBtn('play');
+    setStatus('読み上げ完了 ✓');
+    wordEls.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
+    updateBar(totalWords - 1);
+    setTimeout(() => { showDisplay(false); resetBar(); }, 2000);
+  };
+
+  utt.onerror = (e) => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    playing = false; paused = false;
+    setPlayBtn('play');
+    setStatus('エラー: ' + e.error);
+    showDisplay(false);
+  };
+
+  speechSynthesis.speak(utt);
+}
+
+function pausePlay() {
+  speechSynthesis.pause();
+  paused = true; playing = false;
+  setPlayBtn('resume');
+  setStatus('一時停止中');
+}
+
+function resumePlay() {
+  speechSynthesis.resume();
+  paused = false; playing = true;
+  setPlayBtn('pause');
+  setStatus('読み上げ中…');
+}
+
+function stopAll() {
+  speechSynthesis.cancel();
+  playing = false; paused = false;
+  setPlayBtn('play');
+  setStatus('');
+  showDisplay(false);
+  resetBar();
+  wordEls = []; words = []; totalWords = 0; currentWordIdx = -1;
+  fullText = ''; startCharOffset = 0;
+}
+
+function highlightWord(idx) {
+  if (idx === currentWordIdx) return;
+  if (currentWordIdx >= 0 && wordEls[currentWordIdx]) {
+    wordEls[currentWordIdx].classList.remove('active');
+    wordEls[currentWordIdx].classList.add('done');
+  }
+  currentWordIdx = idx;
+  if (wordEls[idx]) {
+    wordEls[idx].classList.remove('done');
+    wordEls[idx].classList.add('active');
+    wordEls[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  updateBar(idx);
+}
+
+/* ============================================================
+   UI helpers
+   ============================================================ */
+function showDisplay(on) {
+  document.getElementById('en-textarea').style.display = on ? 'none'  : 'block';
+  document.getElementById('en-display').style.display  = on ? 'block' : 'none';
+}
+
+function setPlayBtn(state) {
+  const btn = document.getElementById('btn-play');
+  const icons = {
+    pause:  '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>',
+    resume: '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    play:   '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  };
+  const labels = { pause: '一時停止', resume: '再開', play: '再生' };
+  btn.innerHTML = icons[state] + ' ' + labels[state];
+  btn.classList.toggle('paused', state === 'resume');
+}
+
+function setSpeed(s, el) {
+  speed = s;
+  document.querySelectorAll('.spd').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  if (playing || paused) {
+    const resumeIdx = Math.max(0, currentWordIdx);
+    speechSynthesis.cancel();
+    playing = false; paused = false;
+    setTimeout(() => startPlay(resumeIdx), 120);
+  }
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+</script>
+</body>
+</html>
