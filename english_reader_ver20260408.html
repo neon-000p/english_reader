@@ -44,7 +44,7 @@
     #edge-notice {
       display: none;
       max-width: 1140px;
-      margin: 0 auto 16px;
+      margin: 16px auto 0;
       background: #fff8e1;
       border: 1.5px solid #f59e0b;
       border-radius: 10px;
@@ -75,6 +75,12 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 10px;
+      gap: 8px;
+    }
+    .panel-head-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .panel-label {
       font-size: 0.72rem;
@@ -86,6 +92,39 @@
     .char-count {
       font-size: 0.72rem;
       color: #a0aec0;
+    }
+
+    /* reset (clear) button */
+    .btn-reset {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+      font-family: inherit;
+      line-height: 1.2;
+    }
+    .btn-reset:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+    .btn-reset:active { transform: scale(0.96); }
+    .btn-reset:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-reset:disabled:hover {
+      background: #f1f5f9;
+      color: #64748b;
+      border-color: #e2e8f0;
     }
 
     #en-textarea {
@@ -342,11 +381,6 @@
   <p>英文を貼り付けると和訳＋音声読み上げができます</p>
 </header>
 
-<!-- Edge check notice (shown only if not Edge) -->
-<div id="edge-notice">
-  ⚠️ このアプリはMicrosoft Edgeの高品質音声に最適化されています。Edgeでご利用ください。
-</div>
-
 <!-- Panels -->
 <!-- Sequence bar -->
 <div class="seq-wrap">
@@ -397,7 +431,13 @@
   <div class="panel">
     <div class="panel-head">
       <span class="panel-label">🇺🇸 English</span>
-      <span class="char-count" id="char-count">0 文字</span>
+      <div class="panel-head-right">
+        <span class="char-count" id="char-count">0 文字</span>
+        <button type="button" class="btn-reset" id="btn-reset" onclick="resetEnglish()" title="英文を空白にします" aria-label="英文をクリア" disabled>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+          クリア
+        </button>
+      </div>
     </div>
     <textarea id="en-textarea" placeholder="ここに英文を貼り付けてください…" rows="12"></textarea>
     <div id="en-display"></div>
@@ -411,6 +451,11 @@
 </div>
 
 <div class="status-msg" id="status-msg"></div>
+
+<!-- Edge check notice (shown only if not Edge) — moved to bottom -->
+<div id="edge-notice">
+  ⚠️ このアプリはMicrosoft Edgeの高品質音声に最適化されています。Edgeでご利用ください。
+</div>
 
 <script>
 /* ============================================================
@@ -563,9 +608,17 @@ function getSelectedVoice() {
    Textarea input + auto-translate
    ============================================================ */
 const textarea = document.getElementById('en-textarea');
+const btnReset = document.getElementById('btn-reset');
+
+function updateResetBtnState() {
+  if (!btnReset) return;
+  btnReset.disabled = textarea.value.length === 0;
+}
+
 textarea.addEventListener('input', () => {
   const t = textarea.value;
   document.getElementById('char-count').textContent = t.length + ' 文字';
+  updateResetBtnState();
   clearTimeout(transTimer);
   if (!t.trim()) { resetTransBox(); return; }
   document.getElementById('trans-box').innerHTML =
@@ -576,6 +629,26 @@ textarea.addEventListener('input', () => {
 function resetTransBox() {
   document.getElementById('trans-box').innerHTML =
     '<span class="trans-placeholder">英文を入力すると自動で翻訳されます</span>';
+}
+
+/* ============================================================
+   Reset (clear) English textarea with one click/tap
+   ============================================================ */
+function resetEnglish() {
+  // Stop any ongoing playback so highlights / state are cleared too
+  if (playing || paused) {
+    stopAll();
+  } else {
+    showDisplay(false);
+    resetBar();
+  }
+  // Clear text and translation
+  textarea.value = '';
+  document.getElementById('char-count').textContent = '0 文字';
+  clearTimeout(transTimer);
+  resetTransBox();
+  updateResetBtnState();
+  textarea.focus();
 }
 
 async function doTranslate(text) {
