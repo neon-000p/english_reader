@@ -471,6 +471,7 @@ let speed   = 1.0;
 let utt     = null;
 let words   = [];
 let wordEls = [];
+let sentenceOffsets = [];
 let totalWords = 0;
 let currentWordIdx = -1;
 let playing = false;
@@ -845,6 +846,15 @@ function buildDisplay(text) {
   display.innerHTML = '';
   words = splitIntoSentences(text);
   wordEls = [];
+  sentenceOffsets = [];
+
+  let searchFrom = 0;
+  words.forEach((sentence) => {
+    const foundAt = text.indexOf(sentence, searchFrom);
+    const offset = foundAt >= 0 ? foundAt : searchFrom;
+    sentenceOffsets.push(offset);
+    searchFrom = offset + sentence.length;
+  });
 
   words.forEach((sentence, idx) => {
     const sp = document.createElement('span');
@@ -891,6 +901,39 @@ function togglePlay() {
 let fullText = '';
 let playbackSessionId = 0;
 let stopRequested = false;
+let sentenceTimers = [];
+let boundarySeen = false;
+
+function clearSentenceTimers() {
+  sentenceTimers.forEach(timer => clearTimeout(timer));
+  sentenceTimers = [];
+}
+
+function estimateSentenceDuration(sentence) {
+  const wordCount = (sentence.match(/[A-Za-z0-9'$-]+/g) || []).length || 1;
+  const wpm = 155 * Math.max(0.7, speed);
+  return Math.max(650, (wordCount / wpm) * 60000);
+}
+
+function startEstimatedHighlights(fromIdx, sessionId) {
+  clearSentenceTimers();
+  let delay = 0;
+  for (let i = fromIdx + 1; i < words.length; i++) {
+    delay += estimateSentenceDuration(words[i - 1]);
+    const timer = setTimeout(() => {
+      if (sessionId !== playbackSessionId || stopRequested || paused) return;
+      highlightWord(i);
+    }, delay);
+    sentenceTimers.push(timer);
+  }
+}
+
+function getSentenceIndexFromChar(charIdx) {
+  for (let i = sentenceOffsets.length - 1; i >= 0; i--) {
+    if (charIdx >= sentenceOffsets[i]) return i;
+  }
+  return 0;
+}
 
 function startPlay(fromWordIdx = 0) {
   const text = textarea.value.trim();
@@ -905,21 +948,16 @@ function startPlay(fromWordIdx = 0) {
 
   const voice = getSelectedVoice();
   const sessionId = ++playbackSessionId;
+  const startIdx = Math.max(0, Math.min(fromWordIdx, words.length - 1));
+  const charOffset = sentenceOffsets[startIdx] || 0;
+  const speakText = fullText.substring(charOffset);
   stopRequested = false;
-  currentWordIdx = Math.max(0, Math.min(fromWordIdx, words.length - 1)) - 1;
+  boundarySeen = false;
+  currentWordIdx = startIdx - 1;
   setPlayBtn('pause');
   setStatus('読み上げ準備中…');
-  playSentence(Math.max(0, fromWordIdx), sessionId, voice);
-}
 
-function playSentence(idx, sessionId, voice) {
-  if (sessionId !== playbackSessionId || stopRequested) return;
-  if (idx >= words.length) {
-    finishPlay(sessionId);
-    return;
-  }
-
-  utt = new SpeechSynthesisUtterance(words[idx]);
+  utt = new SpeechSynthesisUtterance(speakText);
   utt.lang = voice ? (getVoiceLang(voice) || 'en-US') : 'en-US';
   if (voice) utt.voice = voice;
   utt.rate = speed;
@@ -928,18 +966,24 @@ function playSentence(idx, sessionId, voice) {
     if (sessionId !== playbackSessionId || stopRequested) return;
     playing = true; paused = false;
     setPlayBtn('pause');
-    highlightWord(idx);
+    highlightWord(startIdx);
+    startEstimatedHighlights(startIdx, sessionId);
     const vName = voice ? displayVoiceName(voice).replace(' ✦','') : '既定';
     setStatus('読み上げ中… ' + vName);
   };
 
+  utt.onboundary = (e) => {
+    if (sessionId !== playbackSessionId || stopRequested) return;
+    if (typeof e.charIndex !== 'number') return;
+    boundarySeen = true;
+    const idx = getSentenceIndexFromChar(e.charIndex + charOffset);
+    if (idx > currentWordIdx) highlightWord(idx);
+  };
+
   utt.onend = () => {
     if (sessionId !== playbackSessionId || stopRequested) return;
-    if (wordEls[idx]) {
-      wordEls[idx].classList.remove('active');
-      wordEls[idx].classList.add('done');
-    }
-    setTimeout(() => playSentence(idx + 1, sessionId, voice), 120);
+    clearSentenceTimers();
+    finishPlay(sessionId);
   };
 
   utt.onerror = (e) => {
@@ -956,6 +1000,7 @@ function playSentence(idx, sessionId, voice) {
 
 function finishPlay(sessionId) {
   if (sessionId !== playbackSessionId || stopRequested) return;
+  clearSentenceTimers();
   playing = false; paused = false;
   setPlayBtn('play');
   setStatus('読み上げ完了 ✓');
@@ -970,6 +1015,7 @@ function finishPlay(sessionId) {
 
 function pausePlay() {
   speechSynthesis.pause();
+  clearSentenceTimers();
   paused = true; playing = false;
   setPlayBtn('resume');
   setStatus('一時停止中');
@@ -980,18 +1026,20 @@ function resumePlay() {
   paused = false; playing = true;
   setPlayBtn('pause');
   setStatus('読み上げ中…');
+  startEstimatedHighlights(Math.max(0, currentWordIdx), playbackSessionId);
 }
 
 function stopAll() {
   stopRequested = true;
   playbackSessionId++;
+  clearSentenceTimers();
   speechSynthesis.cancel();
   playing = false; paused = false;
   setPlayBtn('play');
   setStatus('');
   showDisplay(false);
   resetBar();
-  wordEls = []; words = []; totalWords = 0; currentWordIdx = -1;
+  wordEls = []; words = []; sentenceOffsets = []; totalWords = 0; currentWordIdx = -1;
   fullText = '';
 }
 
@@ -1040,6 +1088,7 @@ function setSpeed(s, el, shouldSave = true) {
     const resumeIdx = Math.max(0, currentWordIdx);
     stopRequested = true;
     playbackSessionId++;
+    clearSentenceTimers();
     speechSynthesis.cancel();
     playing = false; paused = false;
     setTimeout(() => startPlay(resumeIdx), 120);
