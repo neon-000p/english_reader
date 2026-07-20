@@ -368,70 +368,37 @@
     }
     .status-msg:empty { margin: 0 auto; }
 
-    .btn-edge-read {
-      display: flex; align-items: center; gap: 7px;
-      background: linear-gradient(135deg, #0f766e, #2563eb);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 9px 16px;
-      font-size: 0.92rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(37,99,235,0.22);
-    }
-
-    .quality-hint {
+    .chrome-reader-wrap {
       max-width: 1140px;
-      margin: -6px auto 14px;
-      color: #64748b;
-      font-size: 0.78rem;
-      text-align: center;
-    }
-
-    .edge-reader {
-      display: none;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 24px 20px 48px;
-    }
-
-    body.edge-mode > header,
-    body.edge-mode > .seq-wrap,
-    body.edge-mode > .controls,
-    body.edge-mode > .panels,
-    body.edge-mode > .status-msg,
-    body.edge-mode > .quality-hint,
-    body.edge-mode > #edge-notice {
-      display: none;
-    }
-
-    body.edge-mode .edge-reader {
-      display: block;
-    }
-
-    .edge-reader-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
-
-    .edge-reader-toolbar span {
-      color: #64748b;
-      font-size: 0.82rem;
-    }
-
-    .edge-reader article {
+      margin: 0 auto 16px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(99,102,241,0.10);
+      padding: 18px;
+    }
+
+    .chrome-reader-wrap .panel-head {
+      margin-bottom: 8px;
+    }
+
+    .chrome-reader-note {
+      color: #64748b;
+      font-size: 0.78rem;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .chrome-reader-text {
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      background: #fafafa;
       color: #1e293b;
-      padding: clamp(22px, 5vw, 54px);
-      font-size: 1.18rem;
-      line-height: 1.9;
+      padding: 16px;
+      min-height: 110px;
+      max-height: 260px;
+      overflow-y: auto;
+      font-size: 1rem;
+      line-height: 1.85;
       white-space: pre-wrap;
       word-break: break-word;
     }
@@ -440,7 +407,6 @@
       .panels { flex-direction: column; }
       .speed-group { flex-wrap: wrap; }
       .controls { gap: 10px; }
-      .btn-edge-read { flex: 1 1 100%; justify-content: center; }
     }
   </style>
 </head>
@@ -473,10 +439,6 @@
   <button class="btn-stop" onclick="stopAll()">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
     停止
-  </button>
-  <button class="btn-edge-read" onclick="openEdgeReader()">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a7 7 0 0 0-7 7v4a3 3 0 0 0 3 3h1v-6H7v-1a5 5 0 0 1 10 0v1h-2v6h1a3 3 0 0 0 3-3v-4a7 7 0 0 0-7-7z"/><path d="M10 20h4v2h-4z"/></svg>
-    Edge高品質
   </button>
 
   <div class="divider"></div>
@@ -525,20 +487,19 @@
 </div>
 
 <div class="status-msg" id="status-msg"></div>
-<div class="quality-hint">音質を優先する場合は「Edge高品質」を押してから、Edgeの「音声で読み上げ」（Ctrl + Shift + U）を使ってください。</div>
+
+<section class="chrome-reader-wrap" aria-labelledby="chrome-reader-title">
+  <div class="panel-head">
+    <span class="panel-label" id="chrome-reader-title">Chrome読み上げ用本文</span>
+  </div>
+  <p class="chrome-reader-note">ChromeのReading modeで聞く場合は、この欄またはページ上の英文を選択して右クリックし、「Reading modeで開く」から再生してください。</p>
+  <article class="chrome-reader-text" id="chrome-reader-text" lang="en-US">英文を貼り付けると、Chromeが読み上げやすい本文としてここにも表示されます。</article>
+</section>
 
 <!-- Edge check notice (shown only if not Edge) — moved to bottom -->
 <div id="edge-notice">
   ⚠️ このアプリはMicrosoft Edgeの高品質音声に最適化されています。Edgeでご利用ください。
 </div>
-
-<main class="edge-reader" id="edge-reader">
-  <div class="edge-reader-toolbar">
-    <button class="btn-stop" onclick="closeEdgeReader()">編集に戻る</button>
-    <span>この画面で Ctrl + Shift + U、または右クリックから「音声で読み上げ」</span>
-  </div>
-  <article id="edge-reader-text" lang="en-US"></article>
-</main>
 
 <script>
 /* ============================================================
@@ -774,6 +735,7 @@ function getSelectedVoice() {
    ============================================================ */
 const textarea = document.getElementById('en-textarea');
 const btnReset = document.getElementById('btn-reset');
+const chromeReaderText = document.getElementById('chrome-reader-text');
 
 function updateResetBtnState() {
   if (!btnReset) return;
@@ -783,6 +745,7 @@ function updateResetBtnState() {
 textarea.addEventListener('input', () => {
   const t = textarea.value;
   document.getElementById('char-count').textContent = t.length + ' 文字';
+  updateChromeReaderText(t);
   updateResetBtnState();
   clearTimeout(transTimer);
   if (!t.trim()) { resetTransBox(); return; }
@@ -794,6 +757,11 @@ textarea.addEventListener('input', () => {
 function resetTransBox() {
   document.getElementById('trans-box').innerHTML =
     '<span class="trans-placeholder">英文を入力すると自動で翻訳されます</span>';
+}
+
+function updateChromeReaderText(text) {
+  const clean = text.trim();
+  chromeReaderText.textContent = clean || '英文を貼り付けると、Chromeが読み上げやすい本文としてここにも表示されます。';
 }
 
 /* ============================================================
@@ -810,6 +778,7 @@ function resetEnglish() {
   // Clear text and translation
   textarea.value = '';
   document.getElementById('char-count').textContent = '0 文字';
+  updateChromeReaderText('');
   clearTimeout(transTimer);
   resetTransBox();
   updateResetBtnState();
@@ -1050,20 +1019,6 @@ function setSpeed(s, el) {
 
 function setStatus(msg) {
   document.getElementById('status-msg').textContent = msg;
-}
-
-function openEdgeReader() {
-  const text = textarea.value.trim();
-  if (!text) { setStatus('英文を入力してください'); return; }
-  stopAll();
-  const readerText = document.getElementById('edge-reader-text');
-  readerText.textContent = text;
-  document.body.classList.add('edge-mode');
-  window.scrollTo({ top: 0, behavior: 'instant' });
-}
-
-function closeEdgeReader() {
-  document.body.classList.remove('edge-mode');
 }
 </script>
 </body>
