@@ -361,9 +361,131 @@
     .status-msg:empty { margin: 0 auto; }
 
     @media (max-width: 700px) {
-      .panels { flex-direction: column; }
-      .speed-group { flex-wrap: wrap; }
-      .controls { gap: 10px; }
+      body {
+        padding: 14px 8px 18px;
+      }
+      header {
+        margin-bottom: 10px;
+      }
+      header h1 {
+        font-size: 1.45rem;
+        line-height: 1.25;
+      }
+      header p {
+        font-size: 0.72rem;
+        margin-top: 2px;
+      }
+      .seq-wrap {
+        margin: 0 0 10px;
+        border-radius: 12px;
+        padding: 9px 12px;
+      }
+      .seq-meta {
+        margin-bottom: 6px;
+      }
+      .controls {
+        margin: 0 0 10px;
+        padding: 10px;
+        border-radius: 14px;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+        align-items: stretch;
+      }
+      .btn-play,
+      .btn-stop,
+      .spd {
+        min-height: 38px;
+        border-radius: 9px;
+        font-size: 0.82rem;
+        line-height: 1;
+      }
+      .btn-play,
+      #btn-stop {
+        justify-content: center;
+        padding: 8px 10px;
+      }
+      .btn-play {
+        grid-column: span 3;
+        box-shadow: 0 3px 10px rgba(124,58,237,0.24);
+      }
+      #btn-stop {
+        grid-column: span 3;
+      }
+      .divider,
+      .voice-badge {
+        display: none !important;
+      }
+      .voice-wrap {
+        grid-column: 1 / -1;
+        gap: 6px;
+      }
+      .voice-label,
+      .speed-label {
+        font-size: 0.74rem;
+      }
+      #voice-select {
+        height: 36px;
+        padding: 5px 8px;
+        font-size: 0.78rem;
+      }
+      .speed-group {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: auto repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        align-items: center;
+      }
+      .spd {
+        padding: 6px 4px;
+      }
+      .utility-btn {
+        grid-column: span 2;
+        justify-content: center;
+        padding: 8px 6px;
+        gap: 5px;
+        font-size: 0.75rem;
+      }
+      #copy-chatgpt-btn {
+        grid-column: span 2;
+      }
+      .panels {
+        flex-direction: column;
+        gap: 10px;
+        margin: 0 0 10px;
+      }
+      .panel {
+        border-radius: 14px;
+        padding: 12px 8px 10px;
+      }
+      .panel-head {
+        margin-bottom: 8px;
+        padding: 0 2px;
+      }
+      .panel-label {
+        font-size: 0.66rem;
+        letter-spacing: 0.08em;
+      }
+      .char-count {
+        font-size: 0.68rem;
+      }
+      .btn-reset {
+        padding: 4px 8px;
+        font-size: 0.68rem;
+      }
+      #en-textarea,
+      #en-display,
+      #trans-box {
+        min-height: 280px;
+        border-radius: 9px;
+        padding: 10px 10px;
+        font-size: 0.92rem;
+        line-height: 1.62;
+      }
+      #en-display {
+        word-break: normal;
+        overflow-wrap: anywhere;
+      }
     }
   </style>
 </head>
@@ -393,7 +515,7 @@
     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
     再生
   </button>
-  <button class="btn-stop" onclick="stopAll()">
+  <button class="btn-stop" id="btn-stop" onclick="stopAll()">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
     停止
   </button>
@@ -418,17 +540,17 @@
     <button class="spd" data-speed="2" onclick="setSpeed(2.0,this)">2.0×</button>
   </div>
 
-  <button class="btn-stop" id="sentence-mode-btn" type="button" onclick="toggleSentenceMode()" aria-pressed="false">
+  <button class="btn-stop utility-btn" id="sentence-mode-btn" type="button" onclick="toggleSentenceMode()" aria-pressed="false">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg>
     文ごと表示
   </button>
-  <button class="btn-stop active" id="tracking-toggle-btn" type="button" onclick="toggleTracking()" aria-pressed="true">
+  <button class="btn-stop utility-btn active" id="tracking-toggle-btn" type="button" onclick="toggleTracking()" aria-pressed="true">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 7 4-14 3 7h4"/></svg>
     追跡表示
   </button>
-  <button class="btn-stop" type="button" onclick="copyChatGPTPrompt()">
+  <button class="btn-stop utility-btn" id="copy-chatgpt-btn" type="button" onclick="copyChatGPTPrompt()">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    ChatGPT用コピー
+    GPTコピー
   </button>
 </div>
 
