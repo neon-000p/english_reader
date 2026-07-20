@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>英文リーダー（Edge版）</title>
+  <title>英文リーダー</title>
 
   <!-- PWA: manifest & theme -->
   <link rel="manifest" href="manifest.json">
@@ -38,20 +38,6 @@
       font-size: 0.82rem;
       color: #6d6b8a;
       margin-top: 4px;
-    }
-
-    /* Edge notice */
-    #edge-notice {
-      display: none;
-      max-width: 1140px;
-      margin: 0 auto;
-      background: #fff8e1;
-      border: 1.5px solid #f59e0b;
-      border-radius: 10px;
-      padding: 10px 16px;
-      font-size: 0.83rem;
-      color: #78350f;
-      text-align: center;
     }
 
     /* panels */
@@ -293,6 +279,11 @@
       transition: background 0.15s;
     }
     .btn-stop:hover { background: #e2e8f0; }
+    .btn-stop.active {
+      background: #ede9fe;
+      color: #5b21b6;
+      border-color: #c4b5fd;
+    }
 
     .divider {
       width: 1px; height: 28px;
@@ -319,7 +310,7 @@
       cursor: pointer;
     }
     #voice-select:focus { border-color: #7c3aed; }
-    /* highlight Natural voices */
+    /* highlight high quality voice candidates */
     option.natural-voice {
       font-weight: 600;
       color: #5b21b6;
@@ -368,41 +359,6 @@
     }
     .status-msg:empty { margin: 0 auto; }
 
-    .chrome-reader-wrap {
-      max-width: 1140px;
-      margin: 0 auto 16px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(99,102,241,0.10);
-      padding: 18px;
-    }
-
-    .chrome-reader-wrap .panel-head {
-      margin-bottom: 8px;
-    }
-
-    .chrome-reader-note {
-      color: #64748b;
-      font-size: 0.78rem;
-      line-height: 1.6;
-      margin-bottom: 10px;
-    }
-
-    .chrome-reader-text {
-      border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
-      background: #fafafa;
-      color: #1e293b;
-      padding: 16px;
-      min-height: 110px;
-      max-height: 260px;
-      overflow-y: auto;
-      font-size: 1rem;
-      line-height: 1.85;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
     @media (max-width: 700px) {
       .panels { flex-direction: column; }
       .speed-group { flex-wrap: wrap; }
@@ -444,9 +400,8 @@
   <div class="divider"></div>
 
   <span class="voice-badge" id="natural-badge">
-    <!-- Edge logo SVG -->
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.86 17.86C21.3 18.27 20.67 18.6 20 18.83c-1.17.39-2.41.54-3.65.44-3.07-.26-5.8-2.01-7.5-4.57-.34-.52-.63-1.07-.86-1.65A6.54 6.54 0 0 1 7.5 10.5c0-.64.08-1.27.24-1.88C8.45 5.3 11.1 3.13 14.26 3c.52-.02 1.04.01 1.55.1A9.97 9.97 0 0 0 12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c2.54 0 4.86-.95 6.63-2.5l.01-.01c.44-.38.84-.8 1.22-1.63z"/></svg>
-    Natural
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.7H21l-5.5 4 2.1 6.8-5.6-4.1-5.6 4.1 2.1-6.8L3 8.7h6.8L12 2z"/></svg>
+    高品質
   </span>
 
   <div class="voice-wrap">
@@ -456,11 +411,20 @@
 
   <div class="speed-group">
     <span class="speed-label">速度：</span>
-    <button class="spd active" onclick="setSpeed(1.0,this)">1.0×</button>
-    <button class="spd" onclick="setSpeed(1.2,this)">1.2×</button>
-    <button class="spd" onclick="setSpeed(1.5,this)">1.5×</button>
-    <button class="spd" onclick="setSpeed(2.0,this)">2.0×</button>
+    <button class="spd active" data-speed="1" onclick="setSpeed(1.0,this)">1.0×</button>
+    <button class="spd" data-speed="1.2" onclick="setSpeed(1.2,this)">1.2×</button>
+    <button class="spd" data-speed="1.5" onclick="setSpeed(1.5,this)">1.5×</button>
+    <button class="spd" data-speed="2" onclick="setSpeed(2.0,this)">2.0×</button>
   </div>
+
+  <button class="btn-stop" id="sentence-mode-btn" type="button" onclick="toggleSentenceMode()" aria-pressed="false">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg>
+    文ごと表示
+  </button>
+  <button class="btn-stop" type="button" onclick="copyChatGPTPrompt()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    ChatGPT用コピー
+  </button>
 </div>
 
 <div class="panels">
@@ -488,19 +452,6 @@
 
 <div class="status-msg" id="status-msg"></div>
 
-<section class="chrome-reader-wrap" aria-labelledby="chrome-reader-title">
-  <div class="panel-head">
-    <span class="panel-label" id="chrome-reader-title">Chrome読み上げ用本文</span>
-  </div>
-  <p class="chrome-reader-note">ChromeのReading modeで聞く場合は、この欄またはページ上の英文を選択して右クリックし、「Reading modeで開く」から再生してください。</p>
-  <article class="chrome-reader-text" id="chrome-reader-text" lang="en-US">英文を貼り付けると、Chromeが読み上げやすい本文としてここにも表示されます。</article>
-</section>
-
-<!-- Edge check notice (shown only if not Edge) — moved to bottom -->
-<div id="edge-notice">
-  ⚠️ このアプリはMicrosoft Edgeの高品質音声に最適化されています。Edgeでご利用ください。
-</div>
-
 <script>
 /* ============================================================
    Service Worker 登録 (PWA)
@@ -511,14 +462,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       console.warn('SW registration failed:', err);
     });
   });
-}
-
-/* ============================================================
-   Edge detection
-   ============================================================ */
-const isEdge = /Edg\//.test(navigator.userAgent);
-if (!isEdge) {
-  document.getElementById('edge-notice').style.display = 'block';
 }
 
 /* ============================================================
@@ -534,16 +477,19 @@ let playing = false;
 let paused  = false;
 let transTimer = null;
 let allVoices  = [];
-let bestVoices = [];   // Microsoft Natural voices (Edge)
+let bestVoices = [];
 let otherVoices = [];
 let voiceRetryTimer = null;
 let voiceRetryIndex = 0;
 let userSelectedVoice = false;
-let missingOnlineNoticeShown = false;
+let sentenceMode = false;
 const VOICE_RETRY_DELAYS = [100, 300, 700, 1500, 3000, 6000];
+const VOICE_STORAGE_KEY = 'english-reader-selected-voice-v1';
+const SPEED_STORAGE_KEY = 'english-reader-speed-v1';
+const SENTENCE_MODE_STORAGE_KEY = 'english-reader-sentence-mode-v1';
 
 /* ============================================================
-   Voice loading — prioritize Microsoft Online/Natural voices
+   Voice loading — prioritize high quality English candidates
    ============================================================ */
 function getVoiceKey(v) {
   return v.voiceURI || `${getVoiceName(v)}|${getVoiceLang(v)}`;
@@ -577,7 +523,7 @@ function isMicrosoftVoice(v) {
   return /Microsoft/i.test(getVoiceSearchText(v));
 }
 
-function isHighQualityEdgeVoice(v) {
+function isHighQualityVoice(v) {
   return isMicrosoftVoice(v) && isEnglishVoice(v) && /(Natural|Online)/i.test(getVoiceSearchText(v));
 }
 
@@ -589,6 +535,49 @@ function displayVoiceName(v) {
     .replace(' Online (Natural)', ' ✦')
     .replace(' Online', ' ✦')
     .replace('- English (', '(');
+}
+
+function getSavedVoiceChoice() {
+  try {
+    return JSON.parse(localStorage.getItem(VOICE_STORAGE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function saveVoiceChoice(value) {
+  try {
+    localStorage.setItem(VOICE_STORAGE_KEY, value);
+  } catch {}
+}
+
+function getSavedSpeed() {
+  try {
+    const saved = Number(localStorage.getItem(SPEED_STORAGE_KEY));
+    return [1, 1.2, 1.5, 2].includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSpeedChoice(value) {
+  try {
+    localStorage.setItem(SPEED_STORAGE_KEY, String(value));
+  } catch {}
+}
+
+function getSavedSentenceMode() {
+  try {
+    return localStorage.getItem(SENTENCE_MODE_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function saveSentenceMode() {
+  try {
+    localStorage.setItem(SENTENCE_MODE_STORAGE_KEY, sentenceMode ? '1' : '0');
+  } catch {}
 }
 
 function scheduleVoiceReload() {
@@ -613,10 +602,25 @@ function selectVoiceOption(sel, voice) {
   return false;
 }
 
-function updateNaturalBadge() {
+function selectVoiceFromSavedChoice(sel, saved) {
+  if (!saved) return false;
+  for (const opt of sel.options) {
+    try {
+      const parsed = JSON.parse(opt.value);
+      if (parsed.key === saved.key ||
+          (parsed.name === saved.name && parsed.lang === saved.lang)) {
+        sel.value = opt.value;
+        return true;
+      }
+    } catch {}
+  }
+  return false;
+}
+
+function updateQualityBadge() {
   const badge = document.getElementById('natural-badge');
   const voice = getSelectedVoice();
-  badge.classList.toggle('show', !!voice && isHighQualityEdgeVoice(voice));
+  badge.classList.toggle('show', !!voice && isHighQualityVoice(voice));
 }
 
 function loadVoices() {
@@ -628,11 +632,12 @@ function loadVoices() {
 
   const sel = document.getElementById('voice-select');
   const selectedBefore = getSelectedVoice();
+  const savedChoice = getSavedVoiceChoice();
   allVoices = voices;
 
-  // Tier 1: Microsoft Online/Natural voices (Edge's own TTS engine)
-  bestVoices = voices.filter(isHighQualityEdgeVoice);
-  // Tier 2: Any Microsoft English voice
+  // Tier 1: high quality English voice candidates
+  bestVoices = voices.filter(isHighQualityVoice);
+  // Tier 2: Microsoft English voices
   const msVoices = voices.filter(v =>
     isMicrosoftVoice(v) && isEnglishVoice(v) && !bestVoices.includes(v)
   );
@@ -668,16 +673,16 @@ function loadVoices() {
   }
 
   if (bestVoices.length) {
-    addGroup('⭐ Edge Online / Natural (高品質)', bestVoices, true);
+    addGroup('高品質候補', bestVoices, true);
   }
   if (msVoices.length) {
-    addGroup('Microsoft', msVoices, false);
+    addGroup('英語音声', msVoices, false);
   }
   if (otherVoices.length) {
     addGroup('その他', otherVoices, false);
   }
 
-  // Auto-select: prefer Jenny, then Aria, then first Natural
+  // Auto-select: prefer familiar US voices, then the first high quality candidate
   const preferNames = ['Jenny', 'Aria', 'Ava', 'Andrew', 'Ryan', 'Sonia', 'Guy', 'Ana'];
   let autoSelect = null;
   for (const name of preferNames) {
@@ -690,28 +695,28 @@ function loadVoices() {
   if (userSelectedVoice && selectedBefore) {
     selected = selectVoiceOption(sel, selectedBefore);
   }
+  if (!selected && savedChoice) {
+    selected = selectVoiceFromSavedChoice(sel, savedChoice);
+    userSelectedVoice = selected;
+  }
   if (!selected && autoSelect) {
     selected = selectVoiceOption(sel, autoSelect);
-    setStatus('Edge の高品質音声を自動選択しました：' + displayVoiceName(autoSelect).replace(' ✦', ''));
   }
-  updateNaturalBadge();
+  updateQualityBadge();
 
   if (bestVoices.length) {
     clearTimeout(voiceRetryTimer);
     voiceRetryIndex = VOICE_RETRY_DELAYS.length;
   } else {
     scheduleVoiceReload();
-    if (isEdge && voiceRetryIndex >= VOICE_RETRY_DELAYS.length && !missingOnlineNoticeShown) {
-      missingOnlineNoticeShown = true;
-      setStatus('Edge の高品質音声が見つかりません。Edge の Online Text To Speech 設定、拡張機能、ネットワーク接続を確認してください。');
-    }
   }
 }
 
 speechSynthesis.onvoiceschanged = loadVoices;
 document.getElementById('voice-select').addEventListener('change', () => {
   userSelectedVoice = true;
-  updateNaturalBadge();
+  saveVoiceChoice(document.getElementById('voice-select').value);
+  updateQualityBadge();
 });
 loadVoices();
 
@@ -735,7 +740,6 @@ function getSelectedVoice() {
    ============================================================ */
 const textarea = document.getElementById('en-textarea');
 const btnReset = document.getElementById('btn-reset');
-const chromeReaderText = document.getElementById('chrome-reader-text');
 
 function updateResetBtnState() {
   if (!btnReset) return;
@@ -745,7 +749,6 @@ function updateResetBtnState() {
 textarea.addEventListener('input', () => {
   const t = textarea.value;
   document.getElementById('char-count').textContent = t.length + ' 文字';
-  updateChromeReaderText(t);
   updateResetBtnState();
   clearTimeout(transTimer);
   if (!t.trim()) { resetTransBox(); return; }
@@ -757,11 +760,6 @@ textarea.addEventListener('input', () => {
 function resetTransBox() {
   document.getElementById('trans-box').innerHTML =
     '<span class="trans-placeholder">英文を入力すると自動で翻訳されます</span>';
-}
-
-function updateChromeReaderText(text) {
-  const clean = text.trim();
-  chromeReaderText.textContent = clean || '英文を貼り付けると、Chromeが読み上げやすい本文としてここにも表示されます。';
 }
 
 /* ============================================================
@@ -778,7 +776,6 @@ function resetEnglish() {
   // Clear text and translation
   textarea.value = '';
   document.getElementById('char-count').textContent = '0 文字';
-  updateChromeReaderText('');
   clearTimeout(transTimer);
   resetTransBox();
   updateResetBtnState();
@@ -821,8 +818,10 @@ function buildDisplay(text) {
   display.innerHTML = '';
   words = []; wordEls = [];
 
-  text.split(/(\s+)/).forEach(tok => {
+  text.split(/(\s+)/).forEach((tok, idx, tokens) => {
     if (/^\s+$/.test(tok)) {
+      const prev = tokens[idx - 1] || '';
+      if (sentenceMode && /[.!?]["')\]]*$/.test(prev) && !/\n/.test(tok)) return;
       display.appendChild(document.createTextNode(tok));
     } else {
       const sp = document.createElement('span');
@@ -831,6 +830,10 @@ function buildDisplay(text) {
       display.appendChild(sp);
       words.push(tok);
       wordEls.push(sp);
+      if (sentenceMode && /[.!?]["')\]]*$/.test(tok)) {
+        const next = tokens[idx + 1] || '';
+        if (!/\n/.test(next)) display.appendChild(document.createElement('br'));
+      }
     }
   });
   totalWords = words.length;
@@ -1005,10 +1008,12 @@ function setPlayBtn(state) {
   btn.classList.toggle('paused', state === 'resume');
 }
 
-function setSpeed(s, el) {
+function setSpeed(s, el, shouldSave = true) {
   speed = s;
   document.querySelectorAll('.spd').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+  const btn = el || Array.from(document.querySelectorAll('.spd')).find(b => Number(b.dataset.speed) === s);
+  if (btn) btn.classList.add('active');
+  if (shouldSave) saveSpeedChoice(s);
   if (playing || paused) {
     const resumeIdx = Math.max(0, currentWordIdx);
     speechSynthesis.cancel();
@@ -1017,9 +1022,75 @@ function setSpeed(s, el) {
   }
 }
 
+function restoreSpeedChoice() {
+  const saved = getSavedSpeed();
+  if (saved) setSpeed(saved, null, false);
+}
+
+function updateSentenceModeButton() {
+  const btn = document.getElementById('sentence-mode-btn');
+  if (!btn) return;
+  btn.classList.toggle('active', sentenceMode);
+  btn.setAttribute('aria-pressed', sentenceMode ? 'true' : 'false');
+}
+
+function toggleSentenceMode() {
+  sentenceMode = !sentenceMode;
+  saveSentenceMode();
+  updateSentenceModeButton();
+  const text = textarea.value.trim();
+  const display = document.getElementById('en-display');
+  if (text && display.style.display === 'block') {
+    const currentIdx = Math.max(0, currentWordIdx);
+    buildDisplay(text);
+    fullText = text;
+    currentWordIdx = -1;
+    if (currentIdx < wordEls.length) highlightWord(currentIdx);
+  }
+}
+
+function restoreSentenceMode() {
+  sentenceMode = getSavedSentenceMode();
+  updateSentenceModeButton();
+}
+
+function buildChatGPTPrompt(text) {
+  return [
+    '次の英文をTOEICリスニング練習用に、自然なアメリカ英語で1文ずつ少し間を空けて読み上げてください。',
+    '読み上げだけをしてください。',
+    '',
+    text
+  ].join('\n');
+}
+
+async function copyChatGPTPrompt() {
+  const text = textarea.value.trim();
+  if (!text) { setStatus('英文を入力してください'); return; }
+
+  const prompt = buildChatGPTPrompt(text);
+  try {
+    await navigator.clipboard.writeText(prompt);
+    setStatus('ChatGPT用プロンプトをコピーしました');
+  } catch {
+    const tmp = document.createElement('textarea');
+    tmp.value = prompt;
+    tmp.setAttribute('readonly', '');
+    tmp.style.position = 'fixed';
+    tmp.style.left = '-9999px';
+    document.body.appendChild(tmp);
+    tmp.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(tmp);
+    setStatus(ok ? 'ChatGPT用プロンプトをコピーしました' : 'コピーに失敗しました');
+  }
+}
+
 function setStatus(msg) {
   document.getElementById('status-msg').textContent = msg;
 }
+
+restoreSpeedChoice();
+restoreSentenceMode();
 </script>
 </body>
 </html>
