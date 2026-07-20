@@ -1382,8 +1382,7 @@ function restoreTracking() {
 
 function buildChatGPTPrompt(text) {
   return [
-    '次の英文をTOEICリスニング練習用に、自然なアメリカ英語で1文ずつ少し間を空けて読み上げてください。',
-    '読み上げだけをしてください。',
+    '次の英文を自然なアメリカ英語で読み上げてください。',
     '',
     text
   ].join('\n');
