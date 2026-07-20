@@ -1,823 +1,1070 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TOEIC Listening Reader</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>英文リーダー（Edge版）</title>
+
+  <!-- PWA: manifest & theme -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="英文リーダー">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #eef4ff;
-      --panel: #ffffff;
-      --text: #172033;
-      --muted: #64748b;
-      --line: #d8e1ef;
-      --primary: #2563eb;
-      --primary-strong: #1d4ed8;
-      --soft: #eaf1ff;
-      --done: #60a5fa;
-      --active: #facc15;
-      --shadow: 0 18px 44px rgba(35, 55, 95, .13);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #101724;
-        --panel: #182235;
-        --text: #eef4ff;
-        --muted: #aab8cf;
-        --line: #31405a;
-        --primary: #75a7ff;
-        --primary-strong: #9bbfff;
-        --soft: #20304b;
-        --done: #5b9dff;
-        --active: #eab308;
-        --shadow: 0 18px 44px rgba(0, 0, 0, .28);
-      }
-    }
-
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #ede9fe 0%, #e0f2fe 100%);
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 12% 0%, rgba(37, 99, 235, .12), transparent 28rem),
-        linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--bg) 78%, #c6f6ff));
-      color: var(--text);
-      font-family: "Segoe UI", "Yu Gothic UI", system-ui, sans-serif;
+      padding: 28px 20px;
     }
 
-    button, textarea, select {
-      font: inherit;
-    }
-
-    button {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      color: var(--text);
-      padding: .72rem .95rem;
-      cursor: pointer;
-      min-height: 44px;
-      white-space: nowrap;
-    }
-
-    button.primary {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: white;
-      font-weight: 700;
-    }
-
-    button:hover {
-      border-color: var(--primary);
-    }
-
-    button.primary:hover {
-      background: var(--primary-strong);
-    }
-
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    .app {
-      width: min(1240px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 28px 0;
-    }
-
-    .top {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(1.45rem, 3vw, 2.25rem);
-      letter-spacing: 0;
-    }
-
-    .subtitle {
-      margin: .35rem 0 0;
-      color: var(--muted);
-    }
-
-    .panel {
-      background: color-mix(in srgb, var(--panel) 94%, transparent);
-      border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      padding: 18px;
-    }
-
-    .sequence {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .sequence-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      color: var(--muted);
-      font-size: .92rem;
-    }
-
-    .bar {
-      position: relative;
-      height: 12px;
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--soft) 80%, var(--line));
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      width: 0%;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--done), var(--primary));
-      transition: width .18s ease;
-    }
-
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: end;
-      gap: 12px;
+    header {
+      text-align: center;
       margin-bottom: 16px;
     }
-
-    label {
-      display: grid;
-      gap: 6px;
-      color: var(--muted);
-      font-size: .92rem;
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1e1b4b;
+    }
+    header p {
+      font-size: 0.82rem;
+      color: #6d6b8a;
+      margin-top: 4px;
     }
 
-    select {
-      min-height: 44px;
-      min-width: 132px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      color: var(--text);
-      padding: 0 .75rem;
+    /* Edge notice */
+    #edge-notice {
+      display: none;
+      max-width: 1140px;
+      margin: 0 auto;
+      background: #fff8e1;
+      border: 1.5px solid #f59e0b;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.83rem;
+      color: #78350f;
+      text-align: center;
     }
 
-    .voice-field {
-      flex: 1 1 260px;
+    /* panels */
+    .panels {
+      display: flex;
+      gap: 16px;
+      max-width: 1140px;
+      margin: 0 auto 16px;
     }
-
-    .voice-field select {
-      width: 100%;
+    .panel {
+      flex: 1;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.10);
+      padding: 18px 18px 14px;
+      display: flex;
+      flex-direction: column;
     }
-
-    .split {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    .editor {
-      display: grid;
-      gap: 10px;
-    }
-
-    .editor-head {
+    .panel-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      color: var(--muted);
-      font-size: .92rem;
-      min-height: 28px;
+      margin-bottom: 10px;
+      gap: 8px;
     }
-
-    .editor-title {
-      color: var(--primary);
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 42vh;
-      resize: vertical;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--panel) 92%, transparent);
-      color: var(--text);
-      padding: 18px;
-      line-height: 1.7;
-    }
-
-    .play-display {
-      min-height: 7rem;
-      max-height: 15rem;
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--panel) 86%, transparent);
-      padding: 14px;
-      line-height: 1.8;
-    }
-
-    .word {
-      border-radius: 4px;
-      padding: 1px 2px;
-    }
-
-    .word.done {
-      background: color-mix(in srgb, var(--done) 18%, transparent);
-    }
-
-    .word.active {
-      background: var(--active);
-      color: #1f2937;
-    }
-
-    .stats {
+    .panel-head-right {
       display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #7c3aed;
+    }
+    .char-count {
+      font-size: 0.72rem;
+      color: #a0aec0;
+    }
+
+    /* reset (clear) button */
+    .btn-reset {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+      font-family: inherit;
+      line-height: 1.2;
+    }
+    .btn-reset:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+    .btn-reset:active { transform: scale(0.96); }
+    .btn-reset:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-reset:disabled:hover {
+      background: #f1f5f9;
+      color: #64748b;
+      border-color: #e2e8f0;
+    }
+
+    #en-textarea {
+      display: block;
+      width: 100%;
+      flex: 1;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.75;
+      resize: none;
+      outline: none;
+      color: #1e293b;
+      min-height: 300px;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    #en-textarea:focus { border-color: #7c3aed; }
+    #en-textarea::placeholder { color: #c4b5fd; }
+
+    #en-display {
+      display: none;
+      flex: 1;
+      border: 1.5px solid #7c3aed;
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: #1e293b;
+      min-height: 300px;
+      overflow-y: auto;
+      background: #faf9ff;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .word { display: inline; cursor: default; }
+    .word.active {
+      background: #fde68a;
+      border-radius: 3px;
+      color: #92400e;
+      font-weight: 600;
+      box-shadow: 0 0 0 2px #fde68a;
+    }
+    .word.done { color: #7c3aed; }
+
+    #trans-box {
+      flex: 1;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: #334155;
+      min-height: 300px;
+      overflow-y: auto;
+      background: #f8fafc;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .trans-placeholder { color: #c4b5fd; }
+    .trans-loading { color: #7c3aed; display: flex; align-items: center; gap: 8px; }
+    .trans-error { color: #ef4444; font-size: 0.9rem; }
+
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid #ddd6fe;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* sequence bar */
+    .seq-wrap {
+      max-width: 1140px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(99,102,241,0.08);
+      padding: 12px 18px;
+    }
+    .seq-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .seq-meta span:last-child { color: #7c3aed; font-weight: 600; }
+
+    .seq-track {
+      width: 100%;
+      height: 8px;
+      background: #ede9fe;
+      border-radius: 99px;
+      position: relative;
+      /* overflow visible so the 14px thumb is not clipped */
+    }
+    .seq-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #7c3aed, #6366f1);
+      border-radius: 99px;
+      transition: width 0.15s ease;
+      pointer-events: none;
+    }
+    .seq-thumb {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px;
+      background: #7c3aed;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(124,58,237,0.6);
+      transition: left 0.2s ease;
+      pointer-events: none;
+    }
+
+    /* controls */
+    .controls {
+      max-width: 1140px;
+      margin: 0 auto 16px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.10);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       flex-wrap: wrap;
-      gap: 10px;
-      color: var(--muted);
-      margin-top: 12px;
-      font-size: .92rem;
     }
 
-    .badge {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: .36rem .64rem;
-      background: var(--soft);
+    .btn-play {
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 22px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-play:hover { opacity: 0.9; }
+    .btn-play:active { transform: scale(0.97); }
+    .btn-play.paused {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      box-shadow: 0 4px 12px rgba(249,115,22,0.3);
     }
 
-    .read-shell {
+    .btn-stop {
+      display: flex; align-items: center; gap: 7px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-stop:hover { background: #e2e8f0; }
+
+    .divider {
+      width: 1px; height: 28px;
+      background: #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    /* voice section */
+    .voice-wrap {
+      display: flex; align-items: center; gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .voice-label { font-size: 0.8rem; color: #6b7280; white-space: nowrap; }
+    #voice-select {
+      flex: 1;
+      min-width: 0;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      color: #374151;
+      outline: none;
+      cursor: pointer;
+    }
+    #voice-select:focus { border-color: #7c3aed; }
+    /* highlight Natural voices */
+    option.natural-voice {
+      font-weight: 600;
+      color: #5b21b6;
+    }
+
+    .speed-group {
+      display: flex; align-items: center; gap: 7px;
+    }
+    .speed-label { font-size: 0.8rem; color: #6b7280; white-space: nowrap; }
+    .spd {
+      background: #f1f5f9;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 13px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .spd:hover { background: #ede9fe; border-color: #c4b5fd; }
+    .spd.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+
+    /* voice badge */
+    .voice-badge {
       display: none;
-      width: min(1060px, calc(100% - 28px));
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #0078d4, #005a9e);
+      color: #fff;
+      border-radius: 6px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+    .voice-badge.show { display: flex; }
+
+    .status-msg {
+      max-width: 1140px;
+      margin: 0 auto 8px;
+      font-size: 0.78rem;
+      color: #9ca3af;
+      text-align: center;
+      min-height: 0;
+    }
+    .status-msg:empty { margin: 0 auto; }
+
+    .btn-edge-read {
+      display: flex; align-items: center; gap: 7px;
+      background: linear-gradient(135deg, #0f766e, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 16px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.22);
+    }
+
+    .quality-hint {
+      max-width: 1140px;
+      margin: -6px auto 14px;
+      color: #64748b;
+      font-size: 0.78rem;
+      text-align: center;
+    }
+
+    .edge-reader {
+      display: none;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 18px 0 40px;
+      padding: 24px 20px 48px;
     }
 
-    .reading .app {
+    body.edge-mode > header,
+    body.edge-mode > .seq-wrap,
+    body.edge-mode > .controls,
+    body.edge-mode > .panels,
+    body.edge-mode > .status-msg,
+    body.edge-mode > .quality-hint,
+    body.edge-mode > #edge-notice {
       display: none;
     }
 
-    .reading .read-shell {
+    body.edge-mode .edge-reader {
       display: block;
     }
 
-    .read-actions {
+    .edge-reader-toolbar {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 18px;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
     }
 
-    article {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      padding: clamp(22px, 5vw, 50px);
-      color: var(--text);
+    .edge-reader-toolbar span {
+      color: #64748b;
+      font-size: 0.82rem;
     }
 
-    article p {
-      margin: 0 0 1.25em;
-      font-size: var(--reader-size, 1.24rem);
+    .edge-reader article {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.10);
+      color: #1e293b;
+      padding: clamp(22px, 5vw, 54px);
+      font-size: 1.18rem;
       line-height: 1.9;
-      letter-spacing: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    article p:last-child {
-      margin-bottom: 0;
-    }
-
-    .empty {
-      color: var(--muted);
-    }
-
-    @media (max-width: 860px) {
-      .app {
-        width: min(100% - 20px, 1240px);
-        padding-top: 18px;
-      }
-
-      .top {
-        align-items: stretch;
-        flex-direction: column;
-      }
-
-      .toolbar {
-        align-items: stretch;
-      }
-
-      label, .toolbar button {
-        flex: 1 1 145px;
-      }
-
-      .split {
-        grid-template-columns: 1fr;
-      }
-
-      textarea {
-        min-height: 32vh;
-      }
+    @media (max-width: 700px) {
+      .panels { flex-direction: column; }
+      .speed-group { flex-wrap: wrap; }
+      .controls { gap: 10px; }
+      .btn-edge-read { flex: 1 1 100%; justify-content: center; }
     }
   </style>
 </head>
 <body>
-  <main class="app" id="editScreen">
-    <div class="top">
-      <div>
-        <h1>TOEIC Listening Reader</h1>
-        <p class="subtitle">英文を聞きながら、日本語訳を右で確認できます</p>
+
+<header>
+  <h1>📖 英文リーダー</h1>
+  <p>英文を貼り付けると和訳＋音声読み上げができます</p>
+</header>
+
+<!-- Panels -->
+<!-- Sequence bar -->
+<div class="seq-wrap">
+  <div class="seq-meta">
+    <span id="seq-word-info">— / — 語</span>
+    <span id="seq-pct">0%</span>
+  </div>
+  <div class="seq-track" id="seq-track">
+    <div class="seq-fill" id="seq-fill"></div>
+    <div class="seq-thumb" id="seq-thumb" style="left:0%"></div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn-play" id="btn-play" onclick="togglePlay()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    再生
+  </button>
+  <button class="btn-stop" onclick="stopAll()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    停止
+  </button>
+  <button class="btn-edge-read" onclick="openEdgeReader()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a7 7 0 0 0-7 7v4a3 3 0 0 0 3 3h1v-6H7v-1a5 5 0 0 1 10 0v1h-2v6h1a3 3 0 0 0 3-3v-4a7 7 0 0 0-7-7z"/><path d="M10 20h4v2h-4z"/></svg>
+    Edge高品質
+  </button>
+
+  <div class="divider"></div>
+
+  <span class="voice-badge" id="natural-badge">
+    <!-- Edge logo SVG -->
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21.86 17.86C21.3 18.27 20.67 18.6 20 18.83c-1.17.39-2.41.54-3.65.44-3.07-.26-5.8-2.01-7.5-4.57-.34-.52-.63-1.07-.86-1.65A6.54 6.54 0 0 1 7.5 10.5c0-.64.08-1.27.24-1.88C8.45 5.3 11.1 3.13 14.26 3c.52-.02 1.04.01 1.55.1A9.97 9.97 0 0 0 12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c2.54 0 4.86-.95 6.63-2.5l.01-.01c.44-.38.84-.8 1.22-1.63z"/></svg>
+    Natural
+  </span>
+
+  <div class="voice-wrap">
+    <span class="voice-label">声：</span>
+    <select id="voice-select"><option>読み込み中…</option></select>
+  </div>
+
+  <div class="speed-group">
+    <span class="speed-label">速度：</span>
+    <button class="spd active" onclick="setSpeed(1.0,this)">1.0×</button>
+    <button class="spd" onclick="setSpeed(1.2,this)">1.2×</button>
+    <button class="spd" onclick="setSpeed(1.5,this)">1.5×</button>
+    <button class="spd" onclick="setSpeed(2.0,this)">2.0×</button>
+  </div>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-label">🇺🇸 English</span>
+      <div class="panel-head-right">
+        <span class="char-count" id="char-count">0 文字</span>
+        <button type="button" class="btn-reset" id="btn-reset" onclick="resetEnglish()" title="英文を空白にします" aria-label="英文をクリア" disabled>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+          クリア
+        </button>
       </div>
-      <button type="button" id="clearBtn">消去</button>
     </div>
-
-    <section class="panel">
-      <div class="sequence">
-        <div class="sequence-head">
-          <span id="seqInfo">0 / 0 語</span>
-          <span id="seqPct">0%</span>
-        </div>
-        <div class="bar" aria-label="再生位置">
-          <div class="bar-fill" id="barFill"></div>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <button type="button" class="primary" id="playBtn">再生</button>
-        <button type="button" id="stopBtn">停止</button>
-        <button type="button" id="translateBtn">和訳</button>
-        <button type="button" id="readBtn">Edge読み上げ用表示</button>
-        <label>
-          速度
-          <select id="rateSelect">
-            <option value="0.85">0.85x</option>
-            <option value="1" selected>1.0x</option>
-            <option value="1.15">1.15x</option>
-            <option value="1.3">1.3x</option>
-            <option value="1.5">1.5x</option>
-          </select>
-        </label>
-        <label>
-          英語
-          <select id="langSelect">
-            <option value="en-US">US English</option>
-            <option value="en-GB">UK English</option>
-            <option value="en-AU">AU English</option>
-            <option value="en-CA">CA English</option>
-          </select>
-        </label>
-        <label class="voice-field">
-          声
-          <select id="voiceSelect">
-            <option value="">自動</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="split">
-        <section class="editor">
-          <div class="editor-head">
-            <span class="editor-title">English</span>
-            <span id="wordCount">0 words</span>
-          </div>
-          <textarea id="sourceText" spellcheck="false" placeholder="ここに英文を貼り付け"></textarea>
-          <div class="play-display" id="playDisplay" aria-live="polite"></div>
-        </section>
-
-        <section class="editor">
-          <div class="editor-head">
-            <span class="editor-title">日本語訳</span>
-            <span id="translateStatus">未翻訳</span>
-          </div>
-          <textarea id="jaText" placeholder="和訳がここに入ります。手入力・貼り付けもできます"></textarea>
-          <div class="stats">
-            <span class="badge" id="charCount">0 chars</span>
-            <span class="badge" id="readTime">0 min</span>
-            <span class="badge" id="playStatus">待機中</span>
-          </div>
-        </section>
-      </div>
-    </section>
-  </main>
-
-  <main class="read-shell" id="readScreen">
-    <div class="read-actions">
-      <button type="button" id="backBtn">編集に戻る</button>
-      <span class="badge" id="readMeta">0 words</span>
+    <textarea id="en-textarea" placeholder="ここに英文を貼り付けてください…" rows="12"></textarea>
+    <div id="en-display"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-label">🇯🇵 日本語訳</span>
     </div>
-    <article id="readerArticle" lang="en-US"></article>
-  </main>
+    <div id="trans-box"><span class="trans-placeholder">英文を入力すると自動で翻訳されます</span></div>
+  </div>
+</div>
 
-  <script>
-    const storageKey = 'toeic-listening-reader-state-v2';
-    const sourceText = document.getElementById('sourceText');
-    const jaText = document.getElementById('jaText');
-    const langSelect = document.getElementById('langSelect');
-    const rateSelect = document.getElementById('rateSelect');
-    const voiceSelect = document.getElementById('voiceSelect');
-    const readBtn = document.getElementById('readBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const backBtn = document.getElementById('backBtn');
-    const playBtn = document.getElementById('playBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const translateBtn = document.getElementById('translateBtn');
-    const article = document.getElementById('readerArticle');
-    const playDisplay = document.getElementById('playDisplay');
-    const wordCount = document.getElementById('wordCount');
-    const charCount = document.getElementById('charCount');
-    const readTime = document.getElementById('readTime');
-    const readMeta = document.getElementById('readMeta');
-    const seqInfo = document.getElementById('seqInfo');
-    const seqPct = document.getElementById('seqPct');
-    const barFill = document.getElementById('barFill');
-    const playStatus = document.getElementById('playStatus');
-    const translateStatus = document.getElementById('translateStatus');
+<div class="status-msg" id="status-msg"></div>
+<div class="quality-hint">音質を優先する場合は「Edge高品質」を押してから、Edgeの「音声で読み上げ」（Ctrl + Shift + U）を使ってください。</div>
 
-    let voices = [];
-    let utterance = null;
-    let playing = false;
-    let paused = false;
-    let words = [];
-    let wordSpans = [];
-    let wordRanges = [];
-    let lastWordIndex = -1;
-    let translateTimer = null;
+<!-- Edge check notice (shown only if not Edge) — moved to bottom -->
+<div id="edge-notice">
+  ⚠️ このアプリはMicrosoft Edgeの高品質音声に最適化されています。Edgeでご利用ください。
+</div>
 
-    function normalizeText(text) {
-      return text
-        .replace(/\r/g, '')
-        .replace(/[ \t]+\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-    }
+<main class="edge-reader" id="edge-reader">
+  <div class="edge-reader-toolbar">
+    <button class="btn-stop" onclick="closeEdgeReader()">編集に戻る</button>
+    <span>この画面で Ctrl + Shift + U、または右クリックから「音声で読み上げ」</span>
+  </div>
+  <article id="edge-reader-text" lang="en-US"></article>
+</main>
 
-    function countWords(text) {
-      const matches = normalizeText(text).match(/[A-Za-z]+(?:[-'][A-Za-z]+)*/g);
-      return matches ? matches.length : 0;
-    }
+<script>
+/* ============================================================
+   Service Worker 登録 (PWA)
+   ============================================================ */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
 
-    function getVoiceName(voice) {
-      return voice.name || voice.voiceURI || '名称不明の音声';
-    }
+/* ============================================================
+   Edge detection
+   ============================================================ */
+const isEdge = /Edg\//.test(navigator.userAgent);
+if (!isEdge) {
+  document.getElementById('edge-notice').style.display = 'block';
+}
 
-    function getVoiceLang(voice) {
-      if (voice.lang) return voice.lang;
-      const text = `${voice.name || ''} ${voice.voiceURI || ''}`;
-      if (/\b(en-US|English \(United States\)|United States)\b/i.test(text)) return 'en-US';
-      if (/\b(en-GB|English \(United Kingdom\)|United Kingdom|Great Britain)\b/i.test(text)) return 'en-GB';
-      if (/\b(en-AU|English \(Australia\)|Australia)\b/i.test(text)) return 'en-AU';
-      if (/\b(en-CA|English \(Canada\)|Canada)\b/i.test(text)) return 'en-CA';
-      if (/\bEnglish\b/i.test(text)) return 'en-US';
-      return '';
-    }
+/* ============================================================
+   State
+   ============================================================ */
+let speed   = 1.0;
+let utt     = null;
+let words   = [];
+let wordEls = [];
+let totalWords = 0;
+let currentWordIdx = -1;
+let playing = false;
+let paused  = false;
+let transTimer = null;
+let allVoices  = [];
+let bestVoices = [];   // Microsoft Natural voices (Edge)
+let otherVoices = [];
+let voiceRetryTimer = null;
+let voiceRetryIndex = 0;
+let userSelectedVoice = false;
+let missingOnlineNoticeShown = false;
+const VOICE_RETRY_DELAYS = [100, 300, 700, 1500, 3000, 6000];
 
-    function isEnglishVoice(voice) {
-      return /^en([_-]|$)/i.test(getVoiceLang(voice)) || /\bEnglish\b/i.test(getVoiceName(voice));
-    }
+/* ============================================================
+   Voice loading — prioritize Microsoft Online/Natural voices
+   ============================================================ */
+function getVoiceKey(v) {
+  return v.voiceURI || `${getVoiceName(v)}|${getVoiceLang(v)}`;
+}
 
-    function displayVoiceName(voice) {
-      return getVoiceName(voice)
-        .replace('Microsoft ', '')
-        .replace(' Online (Natural)', ' Natural')
-        .replace(' Online', '')
-        .replace('- English (', '(');
-    }
+function getVoiceSearchText(v) {
+  return `${getVoiceName(v)} ${getVoiceLang(v)} ${v.voiceURI || ''}`;
+}
 
-    function getVoiceKey(voice) {
-      return voice.voiceURI || `${getVoiceName(voice)}|${getVoiceLang(voice)}`;
-    }
+function getVoiceName(v) {
+  return v.name || v.voiceURI || '名称不明の音声';
+}
 
-    function loadVoices() {
-      voices = speechSynthesis.getVoices().filter(isEnglishVoice);
-      const selected = voiceSelect.value;
-      voiceSelect.innerHTML = '<option value="">自動</option>';
-      voices.forEach((voice) => {
-        const option = document.createElement('option');
-        option.value = getVoiceKey(voice);
-        option.textContent = displayVoiceName(voice);
-        voiceSelect.appendChild(option);
+function getVoiceLang(v) {
+  if (v.lang) return v.lang;
+  const text = `${v.name || ''} ${v.voiceURI || ''}`;
+  if (/\b(en-US|English \(United States\)|United States)\b/i.test(text)) return 'en-US';
+  if (/\b(en-GB|English \(United Kingdom\)|United Kingdom|Great Britain)\b/i.test(text)) return 'en-GB';
+  if (/\b(en-AU|English \(Australia\)|Australia)\b/i.test(text)) return 'en-AU';
+  if (/\b(en-CA|English \(Canada\)|Canada)\b/i.test(text)) return 'en-CA';
+  if (/\b(en-IN|English \(India\)|India)\b/i.test(text)) return 'en-IN';
+  if (/\bEnglish\b/i.test(text)) return 'en-US';
+  return '';
+}
+
+function isEnglishVoice(v) {
+  return /^en([_-]|$)/i.test(getVoiceLang(v)) || /\bEnglish\b/i.test(getVoiceSearchText(v));
+}
+
+function isMicrosoftVoice(v) {
+  return /Microsoft/i.test(getVoiceSearchText(v));
+}
+
+function isHighQualityEdgeVoice(v) {
+  return isMicrosoftVoice(v) && isEnglishVoice(v) && /(Natural|Online)/i.test(getVoiceSearchText(v));
+}
+
+function displayVoiceName(v) {
+  const lang = getVoiceLang(v);
+  const fallbackLabel = lang ? `音声 (${lang})` : '名称不明の音声';
+  return (getVoiceName(v) || fallbackLabel)
+    .replace('Microsoft ', '')
+    .replace(' Online (Natural)', ' ✦')
+    .replace(' Online', ' ✦')
+    .replace('- English (', '(');
+}
+
+function scheduleVoiceReload() {
+  if (voiceRetryIndex >= VOICE_RETRY_DELAYS.length) return;
+  clearTimeout(voiceRetryTimer);
+  const delay = VOICE_RETRY_DELAYS[voiceRetryIndex++];
+  voiceRetryTimer = setTimeout(loadVoices, delay);
+}
+
+function selectVoiceOption(sel, voice) {
+  if (!voice) return false;
+  const key = getVoiceKey(voice);
+  for (const opt of sel.options) {
+    try {
+      const parsed = JSON.parse(opt.value);
+      if (parsed.key === key || (parsed.name === getVoiceName(voice) && parsed.lang === getVoiceLang(voice))) {
+        sel.value = opt.value;
+        return true;
+      }
+    } catch {}
+  }
+  return false;
+}
+
+function updateNaturalBadge() {
+  const badge = document.getElementById('natural-badge');
+  const voice = getSelectedVoice();
+  badge.classList.toggle('show', !!voice && isHighQualityEdgeVoice(voice));
+}
+
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  if (!voices.length) {
+    scheduleVoiceReload();
+    return;
+  }
+
+  const sel = document.getElementById('voice-select');
+  const selectedBefore = getSelectedVoice();
+  allVoices = voices;
+
+  // Tier 1: Microsoft Online/Natural voices (Edge's own TTS engine)
+  bestVoices = voices.filter(isHighQualityEdgeVoice);
+  // Tier 2: Any Microsoft English voice
+  const msVoices = voices.filter(v =>
+    isMicrosoftVoice(v) && isEnglishVoice(v) && !bestVoices.includes(v)
+  );
+  // Tier 3: Other English voices
+  otherVoices = voices.filter(v =>
+    !isMicrosoftVoice(v) && isEnglishVoice(v)
+  );
+  // Fallback: any voice if no English
+  if (!bestVoices.length && !msVoices.length && !otherVoices.length) {
+    otherVoices = voices;
+  }
+
+  sel.innerHTML = '';
+
+  // Build grouped option list
+  function addGroup(label, list, isHighQuality) {
+    if (!list.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = label;
+    list.forEach(v => {
+      const o = document.createElement('option');
+      o.value = JSON.stringify({
+        key: getVoiceKey(v),
+        name: getVoiceName(v),
+        lang: getVoiceLang(v),
+        highQuality: isHighQuality
       });
-      voiceSelect.value = [...voiceSelect.options].some((option) => option.value === selected) ? selected : '';
-    }
-
-    function getSelectedVoice() {
-      if (!voiceSelect.value) return null;
-      return voices.find((voice) => getVoiceKey(voice) === voiceSelect.value) || null;
-    }
-
-    function saveState() {
-      const state = {
-        text: sourceText.value,
-        ja: jaText.value,
-        lang: langSelect.value,
-        rate: rateSelect.value,
-        voice: voiceSelect.value
-      };
-      localStorage.setItem(storageKey, JSON.stringify(state));
-    }
-
-    function loadState() {
-      try {
-        const state = JSON.parse(localStorage.getItem(storageKey) || '{}');
-        sourceText.value = state.text || '';
-        jaText.value = state.ja || '';
-        langSelect.value = state.lang || 'en-US';
-        rateSelect.value = state.rate || '1';
-        voiceSelect.value = state.voice || '';
-      } catch {}
-    }
-
-    function updateStats() {
-      const text = normalizeText(sourceText.value);
-      const total = countWords(text);
-      wordCount.textContent = `${total} words`;
-      charCount.textContent = `${text.length} chars`;
-      readTime.textContent = `${Math.max(0, Math.ceil(total / 150))} min`;
-      readMeta.textContent = `${total} words`;
-      if (!playing && !paused) updateSequence(-1, total);
-    }
-
-    function updateSequence(index, total = words.length) {
-      const current = total === 0 ? 0 : Math.max(0, Math.min(index + 1, total));
-      const pct = total ? Math.round((current / total) * 100) : 0;
-      seqInfo.textContent = `${current} / ${total} 語`;
-      seqPct.textContent = `${pct}%`;
-      barFill.style.width = `${pct}%`;
-    }
-
-    function buildPlayDisplay(text) {
-      playDisplay.textContent = '';
-      words = [];
-      wordSpans = [];
-      wordRanges = [];
-      lastWordIndex = -1;
-
-      const normalized = normalizeText(text);
-      const pattern = /[A-Za-z]+(?:[-'][A-Za-z]+)*|\s+|[^\sA-Za-z]+/g;
-      let match;
-      while ((match = pattern.exec(normalized)) !== null) {
-        const token = match[0];
-        if (/^[A-Za-z]+/.test(token)) {
-          const span = document.createElement('span');
-          span.className = 'word';
-          span.textContent = token;
-          playDisplay.appendChild(span);
-          words.push(token);
-          wordSpans.push(span);
-          wordRanges.push({ start: match.index, end: match.index + token.length });
-        } else {
-          playDisplay.appendChild(document.createTextNode(token));
-        }
-      }
-      if (!normalized) {
-        const empty = document.createElement('span');
-        empty.className = 'empty';
-        empty.textContent = '英文を貼り付けると、再生中の語がここに表示されます';
-        playDisplay.appendChild(empty);
-      }
-      updateSequence(-1);
-    }
-
-    function highlightWord(index) {
-      if (index === lastWordIndex || index < 0 || index >= wordSpans.length) return;
-      if (wordSpans[lastWordIndex]) {
-        wordSpans[lastWordIndex].classList.remove('active');
-        wordSpans[lastWordIndex].classList.add('done');
-      }
-      const span = wordSpans[index];
-      span.classList.add('active');
-      span.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      lastWordIndex = index;
-      updateSequence(index);
-    }
-
-    function resetPlaybackUi() {
-      wordSpans.forEach((span) => span.classList.remove('active', 'done'));
-      lastWordIndex = -1;
-      updateSequence(-1);
-      playBtn.textContent = '再生';
-      playStatus.textContent = '待機中';
-      playing = false;
-      paused = false;
-    }
-
-    function playText() {
-      const text = normalizeText(sourceText.value);
-      if (!text) {
-        sourceText.focus();
-        return;
-      }
-
-      if (paused) {
-        speechSynthesis.resume();
-        playing = true;
-        paused = false;
-        playBtn.textContent = '一時停止';
-        playStatus.textContent = '再生中';
-        return;
-      }
-
-      if (playing) {
-        speechSynthesis.pause();
-        playing = false;
-        paused = true;
-        playBtn.textContent = '再開';
-        playStatus.textContent = '一時停止';
-        return;
-      }
-
-      speechSynthesis.cancel();
-      buildPlayDisplay(text);
-      utterance = new SpeechSynthesisUtterance(text);
-      const selectedVoice = getSelectedVoice();
-      utterance.lang = selectedVoice ? (getVoiceLang(selectedVoice) || langSelect.value) : langSelect.value;
-      utterance.rate = Number(rateSelect.value);
-      if (selectedVoice) utterance.voice = selectedVoice;
-
-      utterance.onstart = () => {
-        playing = true;
-        paused = false;
-        playBtn.textContent = '一時停止';
-        playStatus.textContent = '再生中';
-      };
-
-      utterance.onboundary = (event) => {
-        if (event.name && event.name !== 'word') return;
-        const index = wordRanges.findIndex((range) => range.start <= event.charIndex && event.charIndex < range.end);
-        if (index >= 0) highlightWord(index);
-      };
-
-      utterance.onend = () => {
-        wordSpans.forEach((span) => span.classList.add('done'));
-        updateSequence(words.length - 1);
-        playBtn.textContent = '再生';
-        playStatus.textContent = '完了';
-        playing = false;
-        paused = false;
-      };
-
-      utterance.onerror = (event) => {
-        if (event.error === 'interrupted' || event.error === 'canceled') return;
-        playStatus.textContent = `エラー: ${event.error}`;
-        playBtn.textContent = '再生';
-        playing = false;
-        paused = false;
-      };
-
-      speechSynthesis.speak(utterance);
-    }
-
-    function stopPlayback() {
-      speechSynthesis.cancel();
-      resetPlaybackUi();
-    }
-
-    async function translateText() {
-      const text = normalizeText(sourceText.value);
-      if (!text) {
-        sourceText.focus();
-        return;
-      }
-      translateBtn.disabled = true;
-      translateStatus.textContent = '翻訳中';
-
-      const googleUrl = 'https://translate.googleapis.com/translate_a/single'
-        + '?client=gtx&sl=en&tl=ja&dt=t&q=' + encodeURIComponent(text);
-
-      try {
-        const response = await fetch(googleUrl);
-        if (!response.ok) throw new Error('google translate failed');
-        const data = await response.json();
-        jaText.value = data[0].map((segment) => segment[0]).join('');
-        translateStatus.textContent = '翻訳済み';
-      } catch {
-        try {
-          const fallbackUrl = 'https://api.mymemory.translated.net/get?q='
-            + encodeURIComponent(text.slice(0, 500))
-            + '&langpair=en|ja';
-          const response = await fetch(fallbackUrl);
-          if (!response.ok) throw new Error('fallback translate failed');
-          const data = await response.json();
-          jaText.value = data.responseData.translatedText || '';
-          translateStatus.textContent = '翻訳済み';
-        } catch {
-          translateStatus.textContent = '翻訳失敗';
-        }
-      } finally {
-        translateBtn.disabled = false;
-        saveState();
-      }
-    }
-
-    function autoTranslateSoon() {
-      clearTimeout(translateTimer);
-      const text = normalizeText(sourceText.value);
-      if (!text || text.length > 1200) return;
-      translateTimer = setTimeout(() => {
-        if (!jaText.value.trim()) translateText();
-      }, 900);
-    }
-
-    function renderArticle() {
-      const text = normalizeText(sourceText.value);
-      article.textContent = '';
-      article.lang = langSelect.value;
-
-      if (!text) {
-        const p = document.createElement('p');
-        p.className = 'empty';
-        p.textContent = 'No text';
-        article.appendChild(p);
-        return;
-      }
-
-      text.split(/\n{2,}/).forEach((paragraph) => {
-        const p = document.createElement('p');
-        p.textContent = paragraph.replace(/\n/g, ' ');
-        article.appendChild(p);
-      });
-    }
-
-    function openReader() {
-      stopPlayback();
-      saveState();
-      renderArticle();
-      document.body.classList.add('reading');
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      history.replaceState(null, '', '#read');
-    }
-
-    function openEditor() {
-      document.body.classList.remove('reading');
-      history.replaceState(null, '', location.pathname + location.search);
-    }
-
-    sourceText.addEventListener('input', () => {
-      jaText.value = '';
-      translateStatus.textContent = '未翻訳';
-      updateStats();
-      buildPlayDisplay(sourceText.value);
-      saveState();
-      autoTranslateSoon();
+      o.textContent = displayVoiceName(v);
+      if (isHighQuality) o.className = 'natural-voice';
+      grp.appendChild(o);
     });
+    sel.appendChild(grp);
+  }
 
-    jaText.addEventListener('input', () => {
-      translateStatus.textContent = jaText.value.trim() ? '手動編集' : '未翻訳';
-      saveState();
-    });
+  if (bestVoices.length) {
+    addGroup('⭐ Edge Online / Natural (高品質)', bestVoices, true);
+  }
+  if (msVoices.length) {
+    addGroup('Microsoft', msVoices, false);
+  }
+  if (otherVoices.length) {
+    addGroup('その他', otherVoices, false);
+  }
 
-    [langSelect, rateSelect, voiceSelect].forEach((el) => {
-      el.addEventListener('change', saveState);
-    });
+  // Auto-select: prefer Jenny, then Aria, then first Natural
+  const preferNames = ['Jenny', 'Aria', 'Ava', 'Andrew', 'Ryan', 'Sonia', 'Guy', 'Ana'];
+  let autoSelect = null;
+  for (const name of preferNames) {
+    autoSelect = bestVoices.find(v => getVoiceSearchText(v).includes(name));
+    if (autoSelect) break;
+  }
+  if (!autoSelect && bestVoices.length) autoSelect = bestVoices[0];
 
-    playBtn.addEventListener('click', playText);
-    stopBtn.addEventListener('click', stopPlayback);
-    translateBtn.addEventListener('click', translateText);
-    readBtn.addEventListener('click', openReader);
-    backBtn.addEventListener('click', openEditor);
-    clearBtn.addEventListener('click', () => {
-      stopPlayback();
-      sourceText.value = '';
-      jaText.value = '';
-      translateStatus.textContent = '未翻訳';
-      updateStats();
-      buildPlayDisplay('');
-      saveState();
-      sourceText.focus();
-    });
+  let selected = false;
+  if (userSelectedVoice && selectedBefore) {
+    selected = selectVoiceOption(sel, selectedBefore);
+  }
+  if (!selected && autoSelect) {
+    selected = selectVoiceOption(sel, autoSelect);
+    setStatus('Edge の高品質音声を自動選択しました：' + displayVoiceName(autoSelect).replace(' ✦', ''));
+  }
+  updateNaturalBadge();
 
-    window.addEventListener('hashchange', () => {
-      if (location.hash === '#read') {
-        openReader();
-      } else {
-        openEditor();
+  if (bestVoices.length) {
+    clearTimeout(voiceRetryTimer);
+    voiceRetryIndex = VOICE_RETRY_DELAYS.length;
+  } else {
+    scheduleVoiceReload();
+    if (isEdge && voiceRetryIndex >= VOICE_RETRY_DELAYS.length && !missingOnlineNoticeShown) {
+      missingOnlineNoticeShown = true;
+      setStatus('Edge の高品質音声が見つかりません。Edge の Online Text To Speech 設定、拡張機能、ネットワーク接続を確認してください。');
+    }
+  }
+}
+
+speechSynthesis.onvoiceschanged = loadVoices;
+document.getElementById('voice-select').addEventListener('change', () => {
+  userSelectedVoice = true;
+  updateNaturalBadge();
+});
+loadVoices();
+
+/* ============================================================
+   Get currently selected voice object
+   ============================================================ */
+function getSelectedVoice() {
+  const sel = document.getElementById('voice-select');
+  try {
+    const parsed = JSON.parse(sel.value);
+    return allVoices.find(v => getVoiceKey(v) === parsed.key) ||
+           allVoices.find(v => getVoiceName(v) === parsed.name && getVoiceLang(v) === parsed.lang) ||
+           null;
+  } catch {
+    return null;
+  }
+}
+
+/* ============================================================
+   Textarea input + auto-translate
+   ============================================================ */
+const textarea = document.getElementById('en-textarea');
+const btnReset = document.getElementById('btn-reset');
+
+function updateResetBtnState() {
+  if (!btnReset) return;
+  btnReset.disabled = textarea.value.length === 0;
+}
+
+textarea.addEventListener('input', () => {
+  const t = textarea.value;
+  document.getElementById('char-count').textContent = t.length + ' 文字';
+  updateResetBtnState();
+  clearTimeout(transTimer);
+  if (!t.trim()) { resetTransBox(); return; }
+  document.getElementById('trans-box').innerHTML =
+    '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
+  transTimer = setTimeout(() => doTranslate(t.trim()), 900);
+});
+
+function resetTransBox() {
+  document.getElementById('trans-box').innerHTML =
+    '<span class="trans-placeholder">英文を入力すると自動で翻訳されます</span>';
+}
+
+/* ============================================================
+   Reset (clear) English textarea with one click/tap
+   ============================================================ */
+function resetEnglish() {
+  // Stop any ongoing playback so highlights / state are cleared too
+  if (playing || paused) {
+    stopAll();
+  } else {
+    showDisplay(false);
+    resetBar();
+  }
+  // Clear text and translation
+  textarea.value = '';
+  document.getElementById('char-count').textContent = '0 文字';
+  clearTimeout(transTimer);
+  resetTransBox();
+  updateResetBtnState();
+  textarea.focus();
+}
+
+async function doTranslate(text) {
+  // Primary: Google Translate unofficial endpoint
+  const url = 'https://translate.googleapis.com/translate_a/single'
+    + '?client=gtx&sl=en&tl=ja&dt=t&q=' + encodeURIComponent(text);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const translated = data[0].map(seg => seg[0]).join('');
+    document.getElementById('trans-box').textContent = translated;
+  } catch {
+    // Fallback: MyMemory
+    try {
+      const r2 = await fetch(
+        'https://api.mymemory.translated.net/get?q='
+        + encodeURIComponent(text.slice(0, 500)) + '&langpair=en|ja'
+      );
+      const d2 = await r2.json();
+      if (d2.responseStatus === 200) {
+        document.getElementById('trans-box').textContent = d2.responseData.translatedText;
+      } else throw new Error();
+    } catch {
+      document.getElementById('trans-box').innerHTML =
+        '<span class="trans-error">⚠️ 翻訳に失敗しました。ネットワーク接続を確認してください。</span>';
+    }
+  }
+}
+
+/* ============================================================
+   Word tokenizer
+   ============================================================ */
+function buildDisplay(text) {
+  const display = document.getElementById('en-display');
+  display.innerHTML = '';
+  words = []; wordEls = [];
+
+  text.split(/(\s+)/).forEach(tok => {
+    if (/^\s+$/.test(tok)) {
+      display.appendChild(document.createTextNode(tok));
+    } else {
+      const sp = document.createElement('span');
+      sp.className = 'word';
+      sp.textContent = tok;
+      display.appendChild(sp);
+      words.push(tok);
+      wordEls.push(sp);
+    }
+  });
+  totalWords = words.length;
+}
+
+/* ============================================================
+   Sequence bar
+   ============================================================ */
+function updateBar(idx) {
+  if (totalWords === 0) return;
+  const pct = totalWords > 1 ? (idx / (totalWords - 1)) * 100 : 100;
+  document.getElementById('seq-fill').style.width  = Math.min(pct, 100) + '%';
+  document.getElementById('seq-thumb').style.left  = Math.min(pct, 100) + '%';
+  document.getElementById('seq-pct').textContent   = Math.round(pct) + '%';
+  document.getElementById('seq-word-info').textContent =
+    (idx + 1) + ' / ' + totalWords + ' 語';
+}
+
+function resetBar() {
+  document.getElementById('seq-fill').style.width  = '0%';
+  document.getElementById('seq-thumb').style.left  = '0%';
+  document.getElementById('seq-pct').textContent   = '0%';
+  document.getElementById('seq-word-info').textContent = '— / — 語';
+}
+
+/* ============================================================
+   Playback
+   ============================================================ */
+function togglePlay() {
+  if (!playing && !paused) { startPlay(); return; }
+  if (playing && !paused)  { pausePlay(); return; }
+  if (paused)               { resumePlay(); return; }
+}
+
+let fullText = '';
+let startCharOffset = 0;
+
+function startPlay(fromWordIdx = 0) {
+  const text = textarea.value.trim();
+  if (!text) { setStatus('英文を入力してください'); return; }
+
+  // Only rebuild the display when starting from the beginning,
+  // so that existing highlights are preserved on speed changes.
+  if (fromWordIdx === 0 || fullText !== text) {
+    buildDisplay(text);
+    fullText = text;
+    fromWordIdx = 0;
+  }
+  showDisplay(true);
+
+  // Compute char offset of the resume word within the full text
+  let charOffset = 0;
+  if (fromWordIdx > 0 && fromWordIdx < words.length) {
+    let cum = 0;
+    for (let i = 0; i < fromWordIdx; i++) {
+      const pos = fullText.indexOf(words[i], cum);
+      if (pos === -1) break;
+      cum = pos + words[i].length;
+    }
+    const startPos = fullText.indexOf(words[fromWordIdx], cum);
+    charOffset = startPos >= 0 ? startPos : 0;
+  }
+  startCharOffset = charOffset;
+  const speakText = fullText.substring(charOffset);
+
+  const voice = getSelectedVoice();
+  utt = new SpeechSynthesisUtterance(speakText);
+  utt.lang  = voice ? (getVoiceLang(voice) || 'en-US') : 'en-US';
+  if (voice) utt.voice = voice;
+  utt.rate  = speed;
+
+  currentWordIdx = fromWordIdx - 1;
+
+  utt.onstart = () => {
+    playing = true; paused = false;
+    setPlayBtn('pause');
+    const vName = voice ? displayVoiceName(voice).replace(' ✦','') : '既定';
+    setStatus('読み上げ中… 🎙️ ' + vName);
+  };
+
+  utt.onboundary = (e) => {
+    if (e.name !== 'word') return;
+    const charIdx = e.charIndex + startCharOffset;
+    let cumLen = 0;
+    for (let i = 0; i < words.length; i++) {
+      const pos = fullText.indexOf(words[i], cumLen);
+      if (pos === -1) break;
+      if (pos <= charIdx && charIdx < pos + words[i].length) {
+        highlightWord(i); break;
       }
-    });
+      cumLen = pos + words[i].length;
+    }
+  };
 
-    speechSynthesis.onvoiceschanged = loadVoices;
-    loadState();
-    loadVoices();
-    setTimeout(loadVoices, 300);
-    setTimeout(loadVoices, 1200);
-    updateStats();
-    buildPlayDisplay(sourceText.value);
-    if (location.hash === '#read') openReader();
-  </script>
+  utt.onend = () => {
+    playing = false; paused = false;
+    setPlayBtn('play');
+    setStatus('読み上げ完了 ✓');
+    wordEls.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
+    updateBar(totalWords - 1);
+    setTimeout(() => { showDisplay(false); resetBar(); }, 2000);
+  };
+
+  utt.onerror = (e) => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    playing = false; paused = false;
+    setPlayBtn('play');
+    setStatus('エラー: ' + e.error);
+    showDisplay(false);
+  };
+
+  speechSynthesis.speak(utt);
+}
+
+function pausePlay() {
+  speechSynthesis.pause();
+  paused = true; playing = false;
+  setPlayBtn('resume');
+  setStatus('一時停止中');
+}
+
+function resumePlay() {
+  speechSynthesis.resume();
+  paused = false; playing = true;
+  setPlayBtn('pause');
+  setStatus('読み上げ中…');
+}
+
+function stopAll() {
+  speechSynthesis.cancel();
+  playing = false; paused = false;
+  setPlayBtn('play');
+  setStatus('');
+  showDisplay(false);
+  resetBar();
+  wordEls = []; words = []; totalWords = 0; currentWordIdx = -1;
+  fullText = ''; startCharOffset = 0;
+}
+
+function highlightWord(idx) {
+  if (idx === currentWordIdx) return;
+  if (currentWordIdx >= 0 && wordEls[currentWordIdx]) {
+    wordEls[currentWordIdx].classList.remove('active');
+    wordEls[currentWordIdx].classList.add('done');
+  }
+  currentWordIdx = idx;
+  if (wordEls[idx]) {
+    wordEls[idx].classList.remove('done');
+    wordEls[idx].classList.add('active');
+    wordEls[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  updateBar(idx);
+}
+
+/* ============================================================
+   UI helpers
+   ============================================================ */
+function showDisplay(on) {
+  document.getElementById('en-textarea').style.display = on ? 'none'  : 'block';
+  document.getElementById('en-display').style.display  = on ? 'block' : 'none';
+}
+
+function setPlayBtn(state) {
+  const btn = document.getElementById('btn-play');
+  const icons = {
+    pause:  '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>',
+    resume: '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    play:   '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  };
+  const labels = { pause: '一時停止', resume: '再開', play: '再生' };
+  btn.innerHTML = icons[state] + ' ' + labels[state];
+  btn.classList.toggle('paused', state === 'resume');
+}
+
+function setSpeed(s, el) {
+  speed = s;
+  document.querySelectorAll('.spd').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  if (playing || paused) {
+    const resumeIdx = Math.max(0, currentWordIdx);
+    speechSynthesis.cancel();
+    playing = false; paused = false;
+    setTimeout(() => startPlay(resumeIdx), 120);
+  }
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function openEdgeReader() {
+  const text = textarea.value.trim();
+  if (!text) { setStatus('英文を入力してください'); return; }
+  stopAll();
+  const readerText = document.getElementById('edge-reader-text');
+  readerText.textContent = text;
+  document.body.classList.add('edge-mode');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function closeEdgeReader() {
+  document.body.classList.remove('edge-mode');
+}
+</script>
 </body>
 </html>
