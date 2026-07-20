@@ -2,10 +2,10 @@
  * 最小構成のキャッシュファーストSW。オフラインでもアプリが起動します。
  * 翻訳APIなどネットワークを要する機能はオフライン時は利用できません。
  */
-const CACHE_NAME = 'english-reader-v20260408';
+const CACHE_NAME = 'english-reader-v20260720-2';
 const ASSETS = [
   './',
-  './english_reader_ver20260408.html',
+  './english_reader_ver20260720.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',

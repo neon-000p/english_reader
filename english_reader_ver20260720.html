@@ -503,15 +503,31 @@ const VOICE_RETRY_DELAYS = [100, 300, 700, 1500, 3000, 6000];
    Voice loading — prioritize Microsoft Online/Natural voices
    ============================================================ */
 function getVoiceKey(v) {
-  return v.voiceURI || `${v.name}|${v.lang}`;
+  return v.voiceURI || `${getVoiceName(v)}|${getVoiceLang(v)}`;
 }
 
 function getVoiceSearchText(v) {
-  return `${v.name || ''} ${v.voiceURI || ''}`;
+  return `${getVoiceName(v)} ${getVoiceLang(v)} ${v.voiceURI || ''}`;
+}
+
+function getVoiceName(v) {
+  return v.name || v.voiceURI || '名称不明の音声';
+}
+
+function getVoiceLang(v) {
+  if (v.lang) return v.lang;
+  const text = `${v.name || ''} ${v.voiceURI || ''}`;
+  if (/\b(en-US|English \(United States\)|United States)\b/i.test(text)) return 'en-US';
+  if (/\b(en-GB|English \(United Kingdom\)|United Kingdom|Great Britain)\b/i.test(text)) return 'en-GB';
+  if (/\b(en-AU|English \(Australia\)|Australia)\b/i.test(text)) return 'en-AU';
+  if (/\b(en-CA|English \(Canada\)|Canada)\b/i.test(text)) return 'en-CA';
+  if (/\b(en-IN|English \(India\)|India)\b/i.test(text)) return 'en-IN';
+  if (/\bEnglish\b/i.test(text)) return 'en-US';
+  return '';
 }
 
 function isEnglishVoice(v) {
-  return /^en([_-]|$)/i.test(v.lang || '') || /\bEnglish\b/i.test(v.name || '');
+  return /^en([_-]|$)/i.test(getVoiceLang(v)) || /\bEnglish\b/i.test(getVoiceSearchText(v));
 }
 
 function isMicrosoftVoice(v) {
@@ -523,7 +539,9 @@ function isHighQualityEdgeVoice(v) {
 }
 
 function displayVoiceName(v) {
-  return v.name
+  const lang = getVoiceLang(v);
+  const fallbackLabel = lang ? `音声 (${lang})` : '名称不明の音声';
+  return (getVoiceName(v) || fallbackLabel)
     .replace('Microsoft ', '')
     .replace(' Online (Natural)', ' ✦')
     .replace(' Online', ' ✦')
@@ -543,7 +561,7 @@ function selectVoiceOption(sel, voice) {
   for (const opt of sel.options) {
     try {
       const parsed = JSON.parse(opt.value);
-      if (parsed.key === key || (parsed.name === voice.name && parsed.lang === voice.lang)) {
+      if (parsed.key === key || (parsed.name === getVoiceName(voice) && parsed.lang === getVoiceLang(voice))) {
         sel.value = opt.value;
         return true;
       }
@@ -595,8 +613,8 @@ function loadVoices() {
       const o = document.createElement('option');
       o.value = JSON.stringify({
         key: getVoiceKey(v),
-        name: v.name,
-        lang: v.lang,
+        name: getVoiceName(v),
+        lang: getVoiceLang(v),
         highQuality: isHighQuality
       });
       o.textContent = displayVoiceName(v);
@@ -662,7 +680,7 @@ function getSelectedVoice() {
   try {
     const parsed = JSON.parse(sel.value);
     return allVoices.find(v => getVoiceKey(v) === parsed.key) ||
-           allVoices.find(v => v.name === parsed.name && v.lang === parsed.lang) ||
+           allVoices.find(v => getVoiceName(v) === parsed.name && getVoiceLang(v) === parsed.lang) ||
            null;
   } catch {
     return null;
@@ -829,7 +847,7 @@ function startPlay(fromWordIdx = 0) {
 
   const voice = getSelectedVoice();
   utt = new SpeechSynthesisUtterance(speakText);
-  utt.lang  = voice ? voice.lang : 'en-US';
+  utt.lang  = voice ? (getVoiceLang(voice) || 'en-US') : 'en-US';
   if (voice) utt.voice = voice;
   utt.rate  = speed;
 
@@ -838,7 +856,7 @@ function startPlay(fromWordIdx = 0) {
   utt.onstart = () => {
     playing = true; paused = false;
     setPlayBtn('pause');
-    const vName = voice ? voice.name.replace('Microsoft ','').replace(' Online (Natural)','') : '既定';
+    const vName = voice ? displayVoiceName(voice).replace(' ✦','') : '既定';
     setStatus('読み上げ中… 🎙️ ' + vName);
   };
 

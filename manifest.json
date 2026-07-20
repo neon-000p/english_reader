@@ -2,7 +2,7 @@
   "name": "英文リーダー",
   "short_name": "英文リーダー",
   "description": "英文を貼り付けると和訳＋音声読み上げができます",
-  "start_url": "./english_reader_ver20260408.html",
+  "start_url": "./english_reader_ver20260720.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
