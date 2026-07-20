@@ -751,6 +751,16 @@ textarea.addEventListener('input', () => {
   const t = textarea.value;
   document.getElementById('char-count').textContent = t.length + ' 文字';
   updateResetBtnState();
+  if (sentenceMode && !playing && !paused) {
+    if (t.trim()) {
+      buildDisplay(t.trim());
+      fullText = t.trim();
+      showDisplay(true);
+    } else {
+      showDisplay(false);
+      resetBar();
+    }
+  }
   clearTimeout(transTimer);
   if (!t.trim()) { resetTransBox(); return; }
   document.getElementById('trans-box').innerHTML =
@@ -975,9 +985,12 @@ function startPlay(fromWordIdx = 0) {
   utt.onboundary = (e) => {
     if (sessionId !== playbackSessionId || stopRequested) return;
     if (typeof e.charIndex !== 'number') return;
-    boundarySeen = true;
+    if (!boundarySeen) {
+      boundarySeen = true;
+      clearSentenceTimers();
+    }
     const idx = getSentenceIndexFromChar(e.charIndex + charOffset);
-    if (idx > currentWordIdx) highlightWord(idx);
+    highlightWord(idx);
   };
 
   utt.onend = () => {
@@ -1026,7 +1039,7 @@ function resumePlay() {
   paused = false; playing = true;
   setPlayBtn('pause');
   setStatus('読み上げ中…');
-  startEstimatedHighlights(Math.max(0, currentWordIdx), playbackSessionId);
+  if (!boundarySeen) startEstimatedHighlights(Math.max(0, currentWordIdx), playbackSessionId);
 }
 
 function stopAll() {
@@ -1113,7 +1126,27 @@ function toggleSentenceMode() {
   updateSentenceModeButton();
   const text = textarea.value.trim();
   const display = document.getElementById('en-display');
-  if (text && display.style.display === 'block') {
+
+  if (!text) {
+    showDisplay(false);
+    resetBar();
+    return;
+  }
+
+  if (!playing && !paused) {
+    if (sentenceMode) {
+      buildDisplay(text);
+      fullText = text;
+      showDisplay(true);
+      resetBar();
+    } else {
+      showDisplay(false);
+      resetBar();
+    }
+    return;
+  }
+
+  if (display.style.display === 'block') {
     const currentIdx = Math.max(0, currentWordIdx);
     buildDisplay(text);
     fullText = text;
