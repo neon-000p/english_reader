@@ -149,13 +149,13 @@
     }
     .word { display: inline; cursor: default; }
     .word.active {
-      background: #fde68a;
+      background: #fef3c7;
       border-radius: 3px;
-      color: #92400e;
-      font-weight: 600;
-      box-shadow: 0 0 0 2px #fde68a;
+      color: #1e293b;
+      font-weight: 500;
+      box-shadow: 0 0 0 2px #fef3c7;
     }
-    .word.done { color: #7c3aed; }
+    .word.done { color: #64748b; }
 
     #trans-box {
       flex: 1;
@@ -377,7 +377,7 @@
 <!-- Sequence bar -->
 <div class="seq-wrap">
   <div class="seq-meta">
-    <span id="seq-word-info">— / — 語</span>
+    <span id="seq-word-info">— / — 文</span>
     <span id="seq-pct">0%</span>
   </div>
   <div class="seq-track" id="seq-track">
@@ -811,29 +811,49 @@ async function doTranslate(text) {
 }
 
 /* ============================================================
-   Word tokenizer
+   Sentence tokenizer
    ============================================================ */
+function splitIntoSentences(text) {
+  const abbreviations = [];
+  const protectedText = text
+    .replace(/\b(?:Mr|Mrs|Ms|Dr|Prof|St|Inc|Ltd|Co|Corp|vs)\./g, (match) => {
+      const key = `@@ABBR${abbreviations.length}@@`;
+      abbreviations.push(match);
+      return key;
+    })
+    .replace(/\b(?:U\.S|U\.K|e\.g|i\.e)\./gi, (match) => {
+      const key = `@@ABBR${abbreviations.length}@@`;
+      abbreviations.push(match);
+      return key;
+    });
+
+  const sentences = protectedText
+    .replace(/\s+/g, ' ')
+    .trim()
+    .match(/[^.!?]+[.!?]+(?:["')\]]+)?|[^.!?]+$/g);
+
+  return (sentences || [protectedText])
+    .map((sentence) => sentence
+      .replace(/@@ABBR(\d+)@@/g, (_, idx) => abbreviations[Number(idx)] || '')
+      .trim()
+    )
+    .filter(Boolean);
+}
+
 function buildDisplay(text) {
   const display = document.getElementById('en-display');
   display.innerHTML = '';
-  words = []; wordEls = [];
+  words = splitIntoSentences(text);
+  wordEls = [];
 
-  text.split(/(\s+)/).forEach((tok, idx, tokens) => {
-    if (/^\s+$/.test(tok)) {
-      const prev = tokens[idx - 1] || '';
-      if (sentenceMode && /[.!?]["')\]]*$/.test(prev) && !/\n/.test(tok)) return;
-      display.appendChild(document.createTextNode(tok));
-    } else {
-      const sp = document.createElement('span');
-      sp.className = 'word';
-      sp.textContent = tok;
-      display.appendChild(sp);
-      words.push(tok);
-      wordEls.push(sp);
-      if (sentenceMode && /[.!?]["')\]]*$/.test(tok)) {
-        const next = tokens[idx + 1] || '';
-        if (!/\n/.test(next)) display.appendChild(document.createElement('br'));
-      }
+  words.forEach((sentence, idx) => {
+    const sp = document.createElement('span');
+    sp.className = 'word sentence';
+    sp.textContent = sentence;
+    display.appendChild(sp);
+    wordEls.push(sp);
+    if (idx < words.length - 1) {
+      display.appendChild(document.createTextNode(sentenceMode ? '\n' : ' '));
     }
   });
   totalWords = words.length;
@@ -844,19 +864,19 @@ function buildDisplay(text) {
    ============================================================ */
 function updateBar(idx) {
   if (totalWords === 0) return;
-  const pct = totalWords > 1 ? (idx / (totalWords - 1)) * 100 : 100;
+  const pct = ((idx + 1) / totalWords) * 100;
   document.getElementById('seq-fill').style.width  = Math.min(pct, 100) + '%';
   document.getElementById('seq-thumb').style.left  = Math.min(pct, 100) + '%';
   document.getElementById('seq-pct').textContent   = Math.round(pct) + '%';
   document.getElementById('seq-word-info').textContent =
-    (idx + 1) + ' / ' + totalWords + ' 語';
+    (idx + 1) + ' / ' + totalWords + ' 文';
 }
 
 function resetBar() {
   document.getElementById('seq-fill').style.width  = '0%';
   document.getElementById('seq-thumb').style.left  = '0%';
   document.getElementById('seq-pct').textContent   = '0%';
-  document.getElementById('seq-word-info').textContent = '— / — 語';
+  document.getElementById('seq-word-info').textContent = '— / — 文';
 }
 
 /* ============================================================
@@ -869,14 +889,13 @@ function togglePlay() {
 }
 
 let fullText = '';
-let startCharOffset = 0;
+let playbackSessionId = 0;
+let stopRequested = false;
 
 function startPlay(fromWordIdx = 0) {
   const text = textarea.value.trim();
   if (!text) { setStatus('英文を入力してください'); return; }
 
-  // Only rebuild the display when starting from the beginning,
-  // so that existing highlights are preserved on speed changes.
   if (fromWordIdx === 0 || fullText !== text) {
     buildDisplay(text);
     fullText = text;
@@ -884,61 +903,48 @@ function startPlay(fromWordIdx = 0) {
   }
   showDisplay(true);
 
-  // Compute char offset of the resume word within the full text
-  let charOffset = 0;
-  if (fromWordIdx > 0 && fromWordIdx < words.length) {
-    let cum = 0;
-    for (let i = 0; i < fromWordIdx; i++) {
-      const pos = fullText.indexOf(words[i], cum);
-      if (pos === -1) break;
-      cum = pos + words[i].length;
-    }
-    const startPos = fullText.indexOf(words[fromWordIdx], cum);
-    charOffset = startPos >= 0 ? startPos : 0;
-  }
-  startCharOffset = charOffset;
-  const speakText = fullText.substring(charOffset);
-
   const voice = getSelectedVoice();
-  utt = new SpeechSynthesisUtterance(speakText);
-  utt.lang  = voice ? (getVoiceLang(voice) || 'en-US') : 'en-US';
-  if (voice) utt.voice = voice;
-  utt.rate  = speed;
+  const sessionId = ++playbackSessionId;
+  stopRequested = false;
+  currentWordIdx = Math.max(0, Math.min(fromWordIdx, words.length - 1)) - 1;
+  setPlayBtn('pause');
+  setStatus('読み上げ準備中…');
+  playSentence(Math.max(0, fromWordIdx), sessionId, voice);
+}
 
-  currentWordIdx = fromWordIdx - 1;
+function playSentence(idx, sessionId, voice) {
+  if (sessionId !== playbackSessionId || stopRequested) return;
+  if (idx >= words.length) {
+    finishPlay(sessionId);
+    return;
+  }
+
+  utt = new SpeechSynthesisUtterance(words[idx]);
+  utt.lang = voice ? (getVoiceLang(voice) || 'en-US') : 'en-US';
+  if (voice) utt.voice = voice;
+  utt.rate = speed;
 
   utt.onstart = () => {
+    if (sessionId !== playbackSessionId || stopRequested) return;
     playing = true; paused = false;
     setPlayBtn('pause');
+    highlightWord(idx);
     const vName = voice ? displayVoiceName(voice).replace(' ✦','') : '既定';
-    setStatus('読み上げ中… 🎙️ ' + vName);
-  };
-
-  utt.onboundary = (e) => {
-    if (e.name !== 'word') return;
-    const charIdx = e.charIndex + startCharOffset;
-    let cumLen = 0;
-    for (let i = 0; i < words.length; i++) {
-      const pos = fullText.indexOf(words[i], cumLen);
-      if (pos === -1) break;
-      if (pos <= charIdx && charIdx < pos + words[i].length) {
-        highlightWord(i); break;
-      }
-      cumLen = pos + words[i].length;
-    }
+    setStatus('読み上げ中… ' + vName);
   };
 
   utt.onend = () => {
-    playing = false; paused = false;
-    setPlayBtn('play');
-    setStatus('読み上げ完了 ✓');
-    wordEls.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
-    updateBar(totalWords - 1);
-    setTimeout(() => { showDisplay(false); resetBar(); }, 2000);
+    if (sessionId !== playbackSessionId || stopRequested) return;
+    if (wordEls[idx]) {
+      wordEls[idx].classList.remove('active');
+      wordEls[idx].classList.add('done');
+    }
+    setTimeout(() => playSentence(idx + 1, sessionId, voice), 120);
   };
 
   utt.onerror = (e) => {
     if (e.error === 'interrupted' || e.error === 'canceled') return;
+    if (sessionId !== playbackSessionId || stopRequested) return;
     playing = false; paused = false;
     setPlayBtn('play');
     setStatus('エラー: ' + e.error);
@@ -946,6 +952,20 @@ function startPlay(fromWordIdx = 0) {
   };
 
   speechSynthesis.speak(utt);
+}
+
+function finishPlay(sessionId) {
+  if (sessionId !== playbackSessionId || stopRequested) return;
+  playing = false; paused = false;
+  setPlayBtn('play');
+  setStatus('読み上げ完了 ✓');
+  wordEls.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
+  updateBar(totalWords - 1);
+  setTimeout(() => {
+    if (sessionId !== playbackSessionId || stopRequested) return;
+    showDisplay(false);
+    resetBar();
+  }, 2000);
 }
 
 function pausePlay() {
@@ -963,6 +983,8 @@ function resumePlay() {
 }
 
 function stopAll() {
+  stopRequested = true;
+  playbackSessionId++;
   speechSynthesis.cancel();
   playing = false; paused = false;
   setPlayBtn('play');
@@ -970,7 +992,7 @@ function stopAll() {
   showDisplay(false);
   resetBar();
   wordEls = []; words = []; totalWords = 0; currentWordIdx = -1;
-  fullText = ''; startCharOffset = 0;
+  fullText = '';
 }
 
 function highlightWord(idx) {
@@ -1016,6 +1038,8 @@ function setSpeed(s, el, shouldSave = true) {
   if (shouldSave) saveSpeedChoice(s);
   if (playing || paused) {
     const resumeIdx = Math.max(0, currentWordIdx);
+    stopRequested = true;
+    playbackSessionId++;
     speechSynthesis.cancel();
     playing = false; paused = false;
     setTimeout(() => startPlay(resumeIdx), 120);
