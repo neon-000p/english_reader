@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TOEIC Listening Reader</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef4ff;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --line: #d8e1ef;
+      --primary: #2563eb;
+      --primary-strong: #1d4ed8;
+      --soft: #eaf1ff;
+      --done: #60a5fa;
+      --active: #facc15;
+      --shadow: 0 18px 44px rgba(35, 55, 95, .13);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101724;
+        --panel: #182235;
+        --text: #eef4ff;
+        --muted: #aab8cf;
+        --line: #31405a;
+        --primary: #75a7ff;
+        --primary-strong: #9bbfff;
+        --soft: #20304b;
+        --done: #5b9dff;
+        --active: #eab308;
+        --shadow: 0 18px 44px rgba(0, 0, 0, .28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(37, 99, 235, .12), transparent 28rem),
+        linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--bg) 78%, #c6f6ff));
+      color: var(--text);
+      font-family: "Segoe UI", "Yu Gothic UI", system-ui, sans-serif;
+    }
+
+    button, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      padding: .72rem .95rem;
+      cursor: pointer;
+      min-height: 44px;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+      font-weight: 700;
+    }
+
+    button:hover {
+      border-color: var(--primary);
+    }
+
+    button.primary:hover {
+      background: var(--primary-strong);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .app {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0;
+    }
+
+    .top {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 3vw, 2.25rem);
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: .35rem 0 0;
+      color: var(--muted);
+    }
+
+    .panel {
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .sequence {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .sequence-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .bar {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--soft) 80%, var(--line));
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--done), var(--primary));
+      transition: width .18s ease;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    select {
+      min-height: 44px;
+      min-width: 132px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 0 .75rem;
+    }
+
+    .voice-field {
+      flex: 1 1 260px;
+    }
+
+    .voice-field select {
+      width: 100%;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .editor {
+      display: grid;
+      gap: 10px;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .92rem;
+      min-height: 28px;
+    }
+
+    .editor-title {
+      color: var(--primary);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 42vh;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      color: var(--text);
+      padding: 18px;
+      line-height: 1.7;
+    }
+
+    .play-display {
+      min-height: 7rem;
+      max-height: 15rem;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--panel) 86%, transparent);
+      padding: 14px;
+      line-height: 1.8;
+    }
+
+    .word {
+      border-radius: 4px;
+      padding: 1px 2px;
+    }
+
+    .word.done {
+      background: color-mix(in srgb, var(--done) 18%, transparent);
+    }
+
+    .word.active {
+      background: var(--active);
+      color: #1f2937;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      margin-top: 12px;
+      font-size: .92rem;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: .36rem .64rem;
+      background: var(--soft);
+    }
+
+    .read-shell {
+      display: none;
+      width: min(1060px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 18px 0 40px;
+    }
+
+    .reading .app {
+      display: none;
+    }
+
+    .reading .read-shell {
+      display: block;
+    }
+
+    .read-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    article {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: clamp(22px, 5vw, 50px);
+      color: var(--text);
+    }
+
+    article p {
+      margin: 0 0 1.25em;
+      font-size: var(--reader-size, 1.24rem);
+      line-height: 1.9;
+      letter-spacing: 0;
+    }
+
+    article p:last-child {
+      margin-bottom: 0;
+    }
+
+    .empty {
+      color: var(--muted);
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        width: min(100% - 20px, 1240px);
+        padding-top: 18px;
+      }
+
+      .top {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .toolbar {
+        align-items: stretch;
+      }
+
+      label, .toolbar button {
+        flex: 1 1 145px;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 32vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="editScreen">
+    <div class="top">
+      <div>
+        <h1>TOEIC Listening Reader</h1>
+        <p class="subtitle">英文を聞きながら、日本語訳を右で確認できます</p>
+      </div>
+      <button type="button" id="clearBtn">消去</button>
+    </div>
+
+    <section class="panel">
+      <div class="sequence">
+        <div class="sequence-head">
+          <span id="seqInfo">0 / 0 語</span>
+          <span id="seqPct">0%</span>
+        </div>
+        <div class="bar" aria-label="再生位置">
+          <div class="bar-fill" id="barFill"></div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button type="button" class="primary" id="playBtn">再生</button>
+        <button type="button" id="stopBtn">停止</button>
+        <button type="button" id="translateBtn">和訳</button>
+        <button type="button" id="readBtn">Edge読み上げ用表示</button>
+        <label>
+          速度
+          <select id="rateSelect">
+            <option value="0.85">0.85x</option>
+            <option value="1" selected>1.0x</option>
+            <option value="1.15">1.15x</option>
+            <option value="1.3">1.3x</option>
+            <option value="1.5">1.5x</option>
+          </select>
+        </label>
+        <label>
+          英語
+          <select id="langSelect">
+            <option value="en-US">US English</option>
+            <option value="en-GB">UK English</option>
+            <option value="en-AU">AU English</option>
+            <option value="en-CA">CA English</option>
+          </select>
+        </label>
+        <label class="voice-field">
+          声
+          <select id="voiceSelect">
+            <option value="">自動</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="split">
+        <section class="editor">
+          <div class="editor-head">
+            <span class="editor-title">English</span>
+            <span id="wordCount">0 words</span>
+          </div>
+          <textarea id="sourceText" spellcheck="false" placeholder="ここに英文を貼り付け"></textarea>
+          <div class="play-display" id="playDisplay" aria-live="polite"></div>
+        </section>
+
+        <section class="editor">
+          <div class="editor-head">
+            <span class="editor-title">日本語訳</span>
+            <span id="translateStatus">未翻訳</span>
+          </div>
+          <textarea id="jaText" placeholder="和訳がここに入ります。手入力・貼り付けもできます"></textarea>
+          <div class="stats">
+            <span class="badge" id="charCount">0 chars</span>
+            <span class="badge" id="readTime">0 min</span>
+            <span class="badge" id="playStatus">待機中</span>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <main class="read-shell" id="readScreen">
+    <div class="read-actions">
+      <button type="button" id="backBtn">編集に戻る</button>
+      <span class="badge" id="readMeta">0 words</span>
+    </div>
+    <article id="readerArticle" lang="en-US"></article>
+  </main>
+
+  <script>
+    const storageKey = 'toeic-listening-reader-state-v2';
+    const sourceText = document.getElementById('sourceText');
+    const jaText = document.getElementById('jaText');
+    const langSelect = document.getElementById('langSelect');
+    const rateSelect = document.getElementById('rateSelect');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const readBtn = document.getElementById('readBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const backBtn = document.getElementById('backBtn');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const translateBtn = document.getElementById('translateBtn');
+    const article = document.getElementById('readerArticle');
+    const playDisplay = document.getElementById('playDisplay');
+    const wordCount = document.getElementById('wordCount');
+    const charCount = document.getElementById('charCount');
+    const readTime = document.getElementById('readTime');
+    const readMeta = document.getElementById('readMeta');
+    const seqInfo = document.getElementById('seqInfo');
+    const seqPct = document.getElementById('seqPct');
+    const barFill = document.getElementById('barFill');
+    const playStatus = document.getElementById('playStatus');
+    const translateStatus = document.getElementById('translateStatus');
+
+    let voices = [];
+    let utterance = null;
+    let playing = false;
+    let paused = false;
+    let words = [];
+    let wordSpans = [];
+    let wordRanges = [];
+    let lastWordIndex = -1;
+    let translateTimer = null;
+
+    function normalizeText(text) {
+      return text
+        .replace(/\r/g, '')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    function countWords(text) {
+      const matches = normalizeText(text).match(/[A-Za-z]+(?:[-'][A-Za-z]+)*/g);
+      return matches ? matches.length : 0;
+    }
+
+    function getVoiceName(voice) {
+      return voice.name || voice.voiceURI || '名称不明の音声';
+    }
+
+    function getVoiceLang(voice) {
+      if (voice.lang) return voice.lang;
+      const text = `${voice.name || ''} ${voice.voiceURI || ''}`;
+      if (/\b(en-US|English \(United States\)|United States)\b/i.test(text)) return 'en-US';
+      if (/\b(en-GB|English \(United Kingdom\)|United Kingdom|Great Britain)\b/i.test(text)) return 'en-GB';
+      if (/\b(en-AU|English \(Australia\)|Australia)\b/i.test(text)) return 'en-AU';
+      if (/\b(en-CA|English \(Canada\)|Canada)\b/i.test(text)) return 'en-CA';
+      if (/\bEnglish\b/i.test(text)) return 'en-US';
+      return '';
+    }
+
+    function isEnglishVoice(voice) {
+      return /^en([_-]|$)/i.test(getVoiceLang(voice)) || /\bEnglish\b/i.test(getVoiceName(voice));
+    }
+
+    function displayVoiceName(voice) {
+      return getVoiceName(voice)
+        .replace('Microsoft ', '')
+        .replace(' Online (Natural)', ' Natural')
+        .replace(' Online', '')
+        .replace('- English (', '(');
+    }
+
+    function getVoiceKey(voice) {
+      return voice.voiceURI || `${getVoiceName(voice)}|${getVoiceLang(voice)}`;
+    }
+
+    function loadVoices() {
+      voices = speechSynthesis.getVoices().filter(isEnglishVoice);
+      const selected = voiceSelect.value;
+      voiceSelect.innerHTML = '<option value="">自動</option>';
+      voices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.value = getVoiceKey(voice);
+        option.textContent = displayVoiceName(voice);
+        voiceSelect.appendChild(option);
+      });
+      voiceSelect.value = [...voiceSelect.options].some((option) => option.value === selected) ? selected : '';
+    }
+
+    function getSelectedVoice() {
+      if (!voiceSelect.value) return null;
+      return voices.find((voice) => getVoiceKey(voice) === voiceSelect.value) || null;
+    }
+
+    function saveState() {
+      const state = {
+        text: sourceText.value,
+        ja: jaText.value,
+        lang: langSelect.value,
+        rate: rateSelect.value,
+        voice: voiceSelect.value
+      };
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    function loadState() {
+      try {
+        const state = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        sourceText.value = state.text || '';
+        jaText.value = state.ja || '';
+        langSelect.value = state.lang || 'en-US';
+        rateSelect.value = state.rate || '1';
+        voiceSelect.value = state.voice || '';
+      } catch {}
+    }
+
+    function updateStats() {
+      const text = normalizeText(sourceText.value);
+      const total = countWords(text);
+      wordCount.textContent = `${total} words`;
+      charCount.textContent = `${text.length} chars`;
+      readTime.textContent = `${Math.max(0, Math.ceil(total / 150))} min`;
+      readMeta.textContent = `${total} words`;
+      if (!playing && !paused) updateSequence(-1, total);
+    }
+
+    function updateSequence(index, total = words.length) {
+      const current = total === 0 ? 0 : Math.max(0, Math.min(index + 1, total));
+      const pct = total ? Math.round((current / total) * 100) : 0;
+      seqInfo.textContent = `${current} / ${total} 語`;
+      seqPct.textContent = `${pct}%`;
+      barFill.style.width = `${pct}%`;
+    }
+
+    function buildPlayDisplay(text) {
+      playDisplay.textContent = '';
+      words = [];
+      wordSpans = [];
+      wordRanges = [];
+      lastWordIndex = -1;
+
+      const normalized = normalizeText(text);
+      const pattern = /[A-Za-z]+(?:[-'][A-Za-z]+)*|\s+|[^\sA-Za-z]+/g;
+      let match;
+      while ((match = pattern.exec(normalized)) !== null) {
+        const token = match[0];
+        if (/^[A-Za-z]+/.test(token)) {
+          const span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = token;
+          playDisplay.appendChild(span);
+          words.push(token);
+          wordSpans.push(span);
+          wordRanges.push({ start: match.index, end: match.index + token.length });
+        } else {
+          playDisplay.appendChild(document.createTextNode(token));
+        }
+      }
+      if (!normalized) {
+        const empty = document.createElement('span');
+        empty.className = 'empty';
+        empty.textContent = '英文を貼り付けると、再生中の語がここに表示されます';
+        playDisplay.appendChild(empty);
+      }
+      updateSequence(-1);
+    }
+
+    function highlightWord(index) {
+      if (index === lastWordIndex || index < 0 || index >= wordSpans.length) return;
+      if (wordSpans[lastWordIndex]) {
+        wordSpans[lastWordIndex].classList.remove('active');
+        wordSpans[lastWordIndex].classList.add('done');
+      }
+      const span = wordSpans[index];
+      span.classList.add('active');
+      span.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      lastWordIndex = index;
+      updateSequence(index);
+    }
+
+    function resetPlaybackUi() {
+      wordSpans.forEach((span) => span.classList.remove('active', 'done'));
+      lastWordIndex = -1;
+      updateSequence(-1);
+      playBtn.textContent = '再生';
+      playStatus.textContent = '待機中';
+      playing = false;
+      paused = false;
+    }
+
+    function playText() {
+      const text = normalizeText(sourceText.value);
+      if (!text) {
+        sourceText.focus();
+        return;
+      }
+
+      if (paused) {
+        speechSynthesis.resume();
+        playing = true;
+        paused = false;
+        playBtn.textContent = '一時停止';
+        playStatus.textContent = '再生中';
+        return;
+      }
+
+      if (playing) {
+        speechSynthesis.pause();
+        playing = false;
+        paused = true;
+        playBtn.textContent = '再開';
+        playStatus.textContent = '一時停止';
+        return;
+      }
+
+      speechSynthesis.cancel();
+      buildPlayDisplay(text);
+      utterance = new SpeechSynthesisUtterance(text);
+      const selectedVoice = getSelectedVoice();
+      utterance.lang = selectedVoice ? (getVoiceLang(selectedVoice) || langSelect.value) : langSelect.value;
+      utterance.rate = Number(rateSelect.value);
+      if (selectedVoice) utterance.voice = selectedVoice;
+
+      utterance.onstart = () => {
+        playing = true;
+        paused = false;
+        playBtn.textContent = '一時停止';
+        playStatus.textContent = '再生中';
+      };
+
+      utterance.onboundary = (event) => {
+        if (event.name && event.name !== 'word') return;
+        const index = wordRanges.findIndex((range) => range.start <= event.charIndex && event.charIndex < range.end);
+        if (index >= 0) highlightWord(index);
+      };
+
+      utterance.onend = () => {
+        wordSpans.forEach((span) => span.classList.add('done'));
+        updateSequence(words.length - 1);
+        playBtn.textContent = '再生';
+        playStatus.textContent = '完了';
+        playing = false;
+        paused = false;
+      };
+
+      utterance.onerror = (event) => {
+        if (event.error === 'interrupted' || event.error === 'canceled') return;
+        playStatus.textContent = `エラー: ${event.error}`;
+        playBtn.textContent = '再生';
+        playing = false;
+        paused = false;
+      };
+
+      speechSynthesis.speak(utterance);
+    }
+
+    function stopPlayback() {
+      speechSynthesis.cancel();
+      resetPlaybackUi();
+    }
+
+    async function translateText() {
+      const text = normalizeText(sourceText.value);
+      if (!text) {
+        sourceText.focus();
+        return;
+      }
+      translateBtn.disabled = true;
+      translateStatus.textContent = '翻訳中';
+
+      const googleUrl = 'https://translate.googleapis.com/translate_a/single'
+        + '?client=gtx&sl=en&tl=ja&dt=t&q=' + encodeURIComponent(text);
+
+      try {
+        const response = await fetch(googleUrl);
+        if (!response.ok) throw new Error('google translate failed');
+        const data = await response.json();
+        jaText.value = data[0].map((segment) => segment[0]).join('');
+        translateStatus.textContent = '翻訳済み';
+      } catch {
+        try {
+          const fallbackUrl = 'https://api.mymemory.translated.net/get?q='
+            + encodeURIComponent(text.slice(0, 500))
+            + '&langpair=en|ja';
+          const response = await fetch(fallbackUrl);
+          if (!response.ok) throw new Error('fallback translate failed');
+          const data = await response.json();
+          jaText.value = data.responseData.translatedText || '';
+          translateStatus.textContent = '翻訳済み';
+        } catch {
+          translateStatus.textContent = '翻訳失敗';
+        }
+      } finally {
+        translateBtn.disabled = false;
+        saveState();
+      }
+    }
+
+    function autoTranslateSoon() {
+      clearTimeout(translateTimer);
+      const text = normalizeText(sourceText.value);
+      if (!text || text.length > 1200) return;
+      translateTimer = setTimeout(() => {
+        if (!jaText.value.trim()) translateText();
+      }, 900);
+    }
+
+    function renderArticle() {
+      const text = normalizeText(sourceText.value);
+      article.textContent = '';
+      article.lang = langSelect.value;
+
+      if (!text) {
+        const p = document.createElement('p');
+        p.className = 'empty';
+        p.textContent = 'No text';
+        article.appendChild(p);
+        return;
+      }
+
+      text.split(/\n{2,}/).forEach((paragraph) => {
+        const p = document.createElement('p');
+        p.textContent = paragraph.replace(/\n/g, ' ');
+        article.appendChild(p);
+      });
+    }
+
+    function openReader() {
+      stopPlayback();
+      saveState();
+      renderArticle();
+      document.body.classList.add('reading');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      history.replaceState(null, '', '#read');
+    }
+
+    function openEditor() {
+      document.body.classList.remove('reading');
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+
+    sourceText.addEventListener('input', () => {
+      jaText.value = '';
+      translateStatus.textContent = '未翻訳';
+      updateStats();
+      buildPlayDisplay(sourceText.value);
+      saveState();
+      autoTranslateSoon();
+    });
+
+    jaText.addEventListener('input', () => {
+      translateStatus.textContent = jaText.value.trim() ? '手動編集' : '未翻訳';
+      saveState();
+    });
+
+    [langSelect, rateSelect, voiceSelect].forEach((el) => {
+      el.addEventListener('change', saveState);
+    });
+
+    playBtn.addEventListener('click', playText);
+    stopBtn.addEventListener('click', stopPlayback);
+    translateBtn.addEventListener('click', translateText);
+    readBtn.addEventListener('click', openReader);
+    backBtn.addEventListener('click', openEditor);
+    clearBtn.addEventListener('click', () => {
+      stopPlayback();
+      sourceText.value = '';
+      jaText.value = '';
+      translateStatus.textContent = '未翻訳';
+      updateStats();
+      buildPlayDisplay('');
+      saveState();
+      sourceText.focus();
+    });
+
+    window.addEventListener('hashchange', () => {
+      if (location.hash === '#read') {
+        openReader();
+      } else {
+        openEditor();
+      }
+    });
+
+    speechSynthesis.onvoiceschanged = loadVoices;
+    loadState();
+    loadVoices();
+    setTimeout(loadVoices, 300);
+    setTimeout(loadVoices, 1200);
+    updateStats();
+    buildPlayDisplay(sourceText.value);
+    if (location.hash === '#read') openReader();
+  </script>
+</body>
+</html>
