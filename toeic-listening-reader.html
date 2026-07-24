@@ -362,7 +362,7 @@
 
     @media (max-width: 700px) {
       body {
-        padding: 14px 8px 18px;
+        padding: 14px 8px calc(94px + env(safe-area-inset-bottom));
       }
       header {
         margin-bottom: 10px;
@@ -392,6 +392,21 @@
         gap: 8px;
         align-items: stretch;
       }
+      .controls::before {
+        content: "";
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(78px + env(safe-area-inset-bottom));
+        background: rgba(255, 255, 255, 0.96);
+        border-top: 1px solid rgba(148, 163, 184, 0.32);
+        box-shadow: 0 -5px 20px rgba(30, 41, 59, 0.12);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        pointer-events: none;
+      }
       .btn-play,
       .btn-stop,
       .spd {
@@ -402,15 +417,24 @@
       }
       .btn-play,
       #btn-stop {
+        position: fixed;
+        z-index: 1000;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        width: calc(50% - 17px);
+        min-height: 54px;
         justify-content: center;
-        padding: 8px 10px;
+        padding: 12px 10px;
+        margin: 0;
+        border-radius: 12px;
+        font-size: 1rem;
       }
       .btn-play {
-        grid-column: span 3;
-        box-shadow: 0 3px 10px rgba(124,58,237,0.24);
+        left: 12px;
+        box-shadow: 0 4px 14px rgba(124,58,237,0.3);
       }
       #btn-stop {
-        grid-column: span 3;
+        right: 12px;
+        box-shadow: 0 4px 14px rgba(71,85,105,0.14);
       }
       .divider,
       .voice-badge {
@@ -585,9 +609,12 @@
    ============================================================ */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((err) => {
-      console.warn('SW registration failed:', err);
-    });
+    navigator.serviceWorker
+      .register('./sw.js', { scope: './', updateViaCache: 'none' })
+      .then((registration) => registration.update())
+      .catch((err) => {
+        console.warn('SW registration failed:', err);
+      });
   });
 }
 

@@ -1,0 +1,38 @@
+{
+  "id": "./toeic-listening-reader.html",
+  "name": "英文リーダー",
+  "short_name": "英文リーダー",
+  "description": "英文を貼り付けると、和訳と音声読み上げができます。",
+  "lang": "ja",
+  "start_url": "./toeic-listening-reader.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ede9fe",
+  "theme_color": "#7c3aed",
+  "categories": [
+    "education",
+    "utilities"
+  ],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
