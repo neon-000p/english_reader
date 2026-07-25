@@ -362,7 +362,7 @@
 
     @media (max-width: 700px) {
       body {
-        padding: 14px 8px calc(94px + env(safe-area-inset-bottom));
+        padding: 14px 8px calc(72px + env(safe-area-inset-bottom));
       }
       header {
         margin-bottom: 10px;
@@ -399,10 +399,10 @@
         left: 0;
         right: 0;
         bottom: 0;
-        height: calc(78px + env(safe-area-inset-bottom));
+        height: calc(60px + env(safe-area-inset-bottom));
         background: rgba(255, 255, 255, 0.96);
         border-top: 1px solid rgba(148, 163, 184, 0.32);
-        box-shadow: 0 -5px 20px rgba(30, 41, 59, 0.12);
+        box-shadow: 0 -3px 12px rgba(30, 41, 59, 0.1);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         pointer-events: none;
@@ -419,22 +419,22 @@
       #btn-stop {
         position: fixed;
         z-index: 1000;
-        bottom: calc(12px + env(safe-area-inset-bottom));
-        width: calc(50% - 17px);
-        min-height: 54px;
+        bottom: calc(8px + env(safe-area-inset-bottom));
+        width: calc(50% - 12px);
+        min-height: 44px;
         justify-content: center;
-        padding: 12px 10px;
+        padding: 8px;
         margin: 0;
-        border-radius: 12px;
-        font-size: 1rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
       }
       .btn-play {
-        left: 12px;
-        box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+        left: 8px;
+        box-shadow: 0 3px 10px rgba(124,58,237,0.24);
       }
       #btn-stop {
-        right: 12px;
-        box-shadow: 0 4px 14px rgba(71,85,105,0.14);
+        right: 8px;
+        box-shadow: 0 3px 10px rgba(71,85,105,0.12);
       }
       .divider,
       .voice-badge {
