@@ -996,18 +996,19 @@ async function doTranslate(text) {
    Sentence tokenizer
    ============================================================ */
 function splitIntoSentences(text) {
-  const abbreviations = [];
+  const protectedParts = [];
+  const protect = (match) => {
+    const key = `@@PROTECTED${protectedParts.length}@@`;
+    protectedParts.push(match);
+    return key;
+  };
+
   const protectedText = text
-    .replace(/\b(?:Mr|Mrs|Ms|Dr|Prof|St|Inc|Ltd|Co|Corp|vs)\./g, (match) => {
-      const key = `@@ABBR${abbreviations.length}@@`;
-      abbreviations.push(match);
-      return key;
-    })
-    .replace(/\b(?:U\.S|U\.K|e\.g|i\.e)\./gi, (match) => {
-      const key = `@@ABBR${abbreviations.length}@@`;
-      abbreviations.push(match);
-      return key;
-    });
+    .replace(/\b(?:Mr|Mrs|Ms|Dr|Prof|St|Inc|Ltd|Co|Corp|vs)\./g, protect)
+    .replace(/\b(?:U\.S|U\.K|e\.g|i\.e)\./gi, protect)
+    // A period between digits belongs to a decimal/version number, not a sentence end.
+    // Examples: 0.5%, 51,947.25, $92.32, 1.2.3
+    .replace(/\d[\d,]*\.\d+(?:\.\d+)*/g, protect);
 
   const sentences = protectedText
     .replace(/\s+/g, ' ')
@@ -1016,7 +1017,7 @@ function splitIntoSentences(text) {
 
   return (sentences || [protectedText])
     .map((sentence) => sentence
-      .replace(/@@ABBR(\d+)@@/g, (_, idx) => abbreviations[Number(idx)] || '')
+      .replace(/@@PROTECTED(\d+)@@/g, (_, idx) => protectedParts[Number(idx)] || '')
       .trim()
     )
     .filter(Boolean);
