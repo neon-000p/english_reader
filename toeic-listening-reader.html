@@ -346,6 +346,35 @@
     }
     .status-msg:empty { margin: 0 auto; }
 
+    @media (min-width: 1100px) {
+      .controls {
+        padding: 14px;
+        gap: 6px;
+        flex-wrap: nowrap;
+      }
+      .btn-play,
+      .btn-stop,
+      .spd {
+        white-space: nowrap;
+      }
+      .btn-play {
+        padding: 10px 16px;
+      }
+      .btn-stop {
+        padding: 9px 12px;
+      }
+      .voice-wrap {
+        flex: 1 1 190px;
+        min-width: 190px;
+      }
+      #voice-select {
+        min-width: 0;
+      }
+      .spd {
+        padding: 6px 10px;
+      }
+    }
+
     @media (max-width: 700px) {
       body {
         padding: 14px 8px calc(72px + env(safe-area-inset-bottom));
