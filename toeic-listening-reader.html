@@ -295,13 +295,14 @@
     /* voice section */
     .voice-wrap {
       display: flex; align-items: center; gap: 8px;
-      flex: 1;
-      min-width: 0;
+      flex: 1 1 280px;
+      min-width: 240px;
     }
     .voice-label { font-size: 0.8rem; color: #6b7280; white-space: nowrap; }
     #voice-select {
-      flex: 1;
-      min-width: 0;
+      flex: 1 1 auto;
+      min-width: 190px;
+      max-width: 100%;
       border: 1.5px solid #e2e8f0;
       border-radius: 8px;
       padding: 6px 10px;
@@ -334,21 +335,6 @@
     }
     .spd:hover { background: #ede9fe; border-color: #c4b5fd; }
     .spd.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
-
-    /* voice badge */
-    .voice-badge {
-      display: none;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #0078d4, #005a9e);
-      color: #fff;
-      border-radius: 6px;
-      padding: 3px 9px;
-      white-space: nowrap;
-    }
-    .voice-badge.show { display: flex; }
 
     .status-msg {
       max-width: 1140px;
@@ -436,13 +422,13 @@
         right: 8px;
         box-shadow: 0 3px 10px rgba(71,85,105,0.12);
       }
-      .divider,
-      .voice-badge {
+      .divider {
         display: none !important;
       }
       .voice-wrap {
         grid-column: 1 / -1;
         gap: 6px;
+        min-width: 0;
       }
       .voice-label,
       .speed-label {
@@ -450,6 +436,7 @@
       }
       #voice-select {
         height: 36px;
+        min-width: 0;
         padding: 5px 8px;
         font-size: 0.78rem;
       }
@@ -545,11 +532,6 @@
   </button>
 
   <div class="divider"></div>
-
-  <span class="voice-badge" id="natural-badge">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.7H21l-5.5 4 2.1 6.8-5.6-4.1-5.6 4.1 2.1-6.8L3 8.7h6.8L12 2z"/></svg>
-    高品質
-  </span>
 
   <div class="voice-wrap">
     <span class="voice-label">声：</span>
@@ -789,12 +771,6 @@ function selectVoiceFromSavedChoice(sel, saved) {
   return false;
 }
 
-function updateQualityBadge() {
-  const badge = document.getElementById('natural-badge');
-  const voice = getSelectedVoice();
-  badge.classList.toggle('show', !!voice && isHighQualityVoice(voice));
-}
-
 function loadVoices() {
   const voices = speechSynthesis.getVoices();
   if (!voices.length) {
@@ -825,33 +801,32 @@ function loadVoices() {
   sel.innerHTML = '';
 
   // Build grouped option list
-  function addGroup(label, list, isHighQuality) {
+  function addGroup(label, list) {
     if (!list.length) return;
     const grp = document.createElement('optgroup');
     grp.label = label;
     list.forEach(v => {
+      const highQuality = isHighQualityVoice(v);
       const o = document.createElement('option');
       o.value = JSON.stringify({
         key: getVoiceKey(v),
         name: getVoiceName(v),
         lang: getVoiceLang(v),
-        highQuality: isHighQuality
+        highQuality
       });
       o.textContent = displayVoiceName(v);
-      if (isHighQuality) o.className = 'natural-voice';
+      if (highQuality) o.className = 'natural-voice';
       grp.appendChild(o);
     });
     sel.appendChild(grp);
   }
 
-  if (bestVoices.length) {
-    addGroup('高品質候補', bestVoices, true);
-  }
-  if (msVoices.length) {
-    addGroup('英語音声', msVoices, false);
+  const microsoftEnglishVoices = [...bestVoices, ...msVoices];
+  if (microsoftEnglishVoices.length) {
+    addGroup('英語音声', microsoftEnglishVoices);
   }
   if (otherVoices.length) {
-    addGroup('その他', otherVoices, false);
+    addGroup('その他', otherVoices);
   }
 
   // Auto-select: prefer familiar US voices, then the first high quality candidate
@@ -874,8 +849,6 @@ function loadVoices() {
   if (!selected && autoSelect) {
     selected = selectVoiceOption(sel, autoSelect);
   }
-  updateQualityBadge();
-
   if (bestVoices.length) {
     clearTimeout(voiceRetryTimer);
     voiceRetryIndex = VOICE_RETRY_DELAYS.length;
@@ -888,7 +861,6 @@ speechSynthesis.onvoiceschanged = loadVoices;
 document.getElementById('voice-select').addEventListener('change', () => {
   userSelectedVoice = true;
   saveVoiceChoice(document.getElementById('voice-select').value);
-  updateQualityBadge();
 });
 loadVoices();
 
