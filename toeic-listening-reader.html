@@ -965,29 +965,84 @@ function resetEnglish() {
   textarea.focus();
 }
 
-async function doTranslate(text) {
-  // Primary: Google Translate unofficial endpoint
+/* ---- 翻訳：長文を文単位のチャンクに分割して順に翻訳する ---- */
+let transToken = 0;
+
+function splitForTranslate(text, limit = 450) {
+  const parts = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+  const chunks = [];
+  let buf = '';
+  for (const p of parts) {
+    if (buf && (buf + p).length > limit) { chunks.push(buf); buf = ''; }
+    if (p.length > limit) {
+      let rest = buf + p;
+      buf = '';
+      while (rest.length > limit) { chunks.push(rest.slice(0, limit)); rest = rest.slice(limit); }
+      buf = rest;
+    } else {
+      buf += p;
+    }
+  }
+  if (buf.trim()) chunks.push(buf);
+  return chunks;
+}
+
+async function gtxTranslate(chunk) {
   const url = 'https://translate.googleapis.com/translate_a/single'
-    + '?client=gtx&sl=en&tl=ja&dt=t&q=' + encodeURIComponent(text);
+    + '?client=gtx&sl=en&tl=ja&dt=t&q=' + encodeURIComponent(chunk);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  return data[0].map(seg => seg[0]).join('');
+}
+
+async function myMemoryTranslate(chunk) {
+  const res = await fetch(
+    'https://api.mymemory.translated.net/get?q='
+    + encodeURIComponent(chunk) + '&langpair=en|ja'
+  );
+  const d = await res.json();
+  if (String(d.responseStatus) !== '200') throw new Error('MyMemory NG');
+  return d.responseData.translatedText;
+}
+
+async function doTranslate(text) {
+  const box = document.getElementById('trans-box');
+  const token = ++transToken;
+  const chunks = splitForTranslate(text);
+  const out = [];
+
+  // Primary: Google Translate unofficial endpoint（チャンクごと）
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const translated = data[0].map(seg => seg[0]).join('');
-    document.getElementById('trans-box').textContent = translated;
+    for (const c of chunks) {
+      const t = await gtxTranslate(c);
+      if (token !== transToken) return;
+      out.push(t);
+      box.textContent = out.join('');
+    }
+    return;
   } catch {
-    // Fallback: MyMemory
-    try {
-      const r2 = await fetch(
-        'https://api.mymemory.translated.net/get?q='
-        + encodeURIComponent(text.slice(0, 500)) + '&langpair=en|ja'
-      );
-      const d2 = await r2.json();
-      if (d2.responseStatus === 200) {
-        document.getElementById('trans-box').textContent = d2.responseData.translatedText;
-      } else throw new Error();
-    } catch {
-      document.getElementById('trans-box').innerHTML =
+    /* fall through */
+  }
+
+  // Fallback: MyMemory（1回500文字制限なのでチャンク必須）
+  if (token !== transToken) return;
+  out.length = 0;
+  box.innerHTML = '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
+  try {
+    for (const c of chunks) {
+      const t = await myMemoryTranslate(c);
+      if (token !== transToken) return;
+      out.push(t);
+      box.textContent = out.join('');
+      await new Promise(r => setTimeout(r, 300));
+    }
+  } catch {
+    if (token !== transToken) return;
+    if (out.length) {
+      box.textContent = out.join('') + ' …（以降の翻訳に失敗しました）';
+    } else {
+      box.innerHTML =
         '<span class="trans-error">⚠️ 翻訳に失敗しました。ネットワーク接続を確認してください。</span>';
     }
   }
