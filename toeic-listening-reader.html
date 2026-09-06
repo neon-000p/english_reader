@@ -97,10 +97,12 @@
       font-family: inherit;
       line-height: 1.2;
     }
-    .btn-reset:hover {
-      background: #fee2e2;
-      color: #b91c1c;
-      border-color: #fca5a5;
+    @media (hover: hover) {
+      .btn-reset:hover {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-color: #fca5a5;
+      }
     }
     .btn-reset:active { transform: scale(0.96); }
     .btn-reset:disabled {
@@ -143,10 +145,12 @@
       outline: none;
     }
     .engine-select:focus-visible { border-color: #7c3aed; }
-    .btn-gear:hover {
-      background: #f5f3ff;
-      color: #6d28d9;
-      border-color: #ddd6fe;
+    @media (hover: hover) {
+      .btn-gear:hover {
+        background: #f5f3ff;
+        color: #6d28d9;
+        border-color: #ddd6fe;
+      }
     }
     #ai-settings {
       display: none;
@@ -194,6 +198,17 @@
       cursor: pointer;
     }
     .btn-save:active { transform: scale(0.96); }
+    .ai-msg {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: #6d28d9;
+      line-height: 1.6;
+      margin-top: 8px;
+      word-break: break-word;
+    }
+    .ai-msg.err { color: #dc2626; }
+    .ai-msg:empty { display: none; }
+
     .ai-note {
       font-size: 0.68rem;
       color: #94a3b8;
@@ -719,6 +734,7 @@
         <button type="button" class="btn-save" onclick="saveAiSettings()">保存する</button>
         <button type="button" class="btn-reset" onclick="clearApiKey()">キーを削除</button>
       </div>
+      <p class="ai-msg" id="ai-msg"></p>
       <p class="ai-note">キーはこの端末のブラウザ内（localStorage）にだけ保存され、翻訳のたび generativelanguage.googleapis.com へ直接送信されます。共用の端末では使わないでください。無料枠には1分・1日あたりの回数制限があります。</p>
     </div>
     <div id="trans-box"><span class="trans-placeholder">英文を入力すると自動で翻訳されます</span></div>
@@ -1177,6 +1193,7 @@ function saveAiSettings() {
   const model = document.getElementById('model-select').value;
   if (key) { lsSet(LS_APIKEY, key); } else { lsDel(LS_APIKEY); }
   lsSet(LS_MODEL, model);
+  setAiMsg(key ? 'APIキーとモデル（' + model + '）を保存しました' : 'APIキーを削除しました');
   setStatus(key ? 'APIキーを保存しました' : 'APIキーを削除しました');
   document.getElementById('ai-settings').classList.remove('open');
   const t = textarea.value.trim();
@@ -1186,24 +1203,43 @@ function saveAiSettings() {
 function clearApiKey() {
   lsDel(LS_APIKEY);
   document.getElementById('api-key-input').value = '';
+  setAiMsg('APIキーを削除しました');
   setStatus('APIキーを削除しました');
+}
+
+function setAiMsg(text, isError) {
+  const el = document.getElementById('ai-msg');
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.toggle('err', !!isError);
 }
 
 async function refreshModels() {
   const key = document.getElementById('api-key-input').value.trim() || getApiKey();
-  if (!key) { setStatus('先にAPIキーを入力してください'); return; }
-  setStatus('モデル一覧を取得中…');
+  if (!key) { setAiMsg('先にAPIキーを入力してください', true); return; }
+  setAiMsg('モデル一覧を取得中…');
   try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', {
       headers: { 'x-goog-api-key': key }
     });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = (j.error && j.error.message) || ''; } catch {}
+      throw new Error('HTTP ' + res.status + (detail ? '：' + detail.slice(0, 90) : ''));
+    }
     const d = await res.json();
-    const names = (d.models || [])
-      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-      .map(m => String(m.name || '').replace(/^models\//, ''))
-      .filter(n => /^gemini/.test(n) && !/embedding|image|tts|live|audio|vision/i.test(n));
-    if (!names.length) throw new Error('使えるモデルが見つかりません');
+    const all = (d.models || []);
+    const nameOf = m => String(m.name || '').replace(/^models\//, '');
+    const isText = n => /^gemini/.test(n) && !/embedding|image|tts|live|audio|vision|robotics/i.test(n);
+
+    // generateContent を宣言しているものを優先。宣言の形式が変わっていても拾えるよう、
+    // 空になったら名前だけで絞り込んだ一覧にフォールバックする
+    let names = all
+      .filter(m => (m.supportedGenerationMethods || []).some(x => /generateContent/i.test(x)))
+      .map(nameOf).filter(isText);
+    if (!names.length) names = all.map(nameOf).filter(isText);
+    if (!names.length) throw new Error('使えるモデルが見つかりません（一覧' + all.length + '件）');
+
     const sel = document.getElementById('model-select');
     const cur = getModel();
     sel.innerHTML = '';
@@ -1213,9 +1249,9 @@ async function refreshModels() {
       sel.appendChild(o);
     });
     sel.value = names.includes(cur) ? cur : names[0];
-    setStatus('モデル一覧を更新しました（' + names.length + '件）。保存を押すと確定します');
+    setAiMsg('モデルを' + names.length + '件取得しました（現在の選択：' + sel.value + '）。プルダウンから選んで「保存する」を押してください');
   } catch (e) {
-    setStatus('モデル一覧を取得できませんでした（' + ((e && e.message) || '') + '）');
+    setAiMsg('取得できませんでした：' + ((e && e.message) || '通信エラー'), true);
   }
 }
 
@@ -1406,6 +1442,7 @@ async function doTranslate(text) {
     } catch (e) {
       if (token !== transToken) return;
       const msg = (e && e.message === 'NO_KEY') ? 'APIキーが未設定です' : ((e && e.message) || '接続できません');
+      setAiMsg('AI翻訳に失敗：' + msg, true);
       setStatus('AI翻訳に失敗（' + msg + '）→ かんたん翻訳に切り替えます');
       box.innerHTML = '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
     }
