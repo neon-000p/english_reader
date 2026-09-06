@@ -126,6 +126,17 @@
       box-shadow: 0 0 0 2px #bae6fd;
       color: #0f172a;
     }
+    .ja-block.playing {
+      background: #fef3c7;
+      border-radius: 3px;
+      color: #1e293b;
+      box-shadow: 0 0 0 2px #fef3c7;
+    }
+    .ja-block.playing.linked {
+      background: #fef3c7;
+      box-shadow: 0 0 0 2px #fef3c7;
+    }
+
     .word.active.linked {
       background: #fef3c7;
       box-shadow: 0 0 0 2px #fef3c7;
@@ -1760,6 +1771,7 @@ function finishPlay(sessionId) {
     el.classList.remove('active');
     if (trackingEnabled) el.classList.add('done');
   });
+  clearTransHighlight();
   if (trackingEnabled) updateBar(totalWords - 1);
   setTimeout(() => {
     if (sessionId !== playbackSessionId || stopRequested) return;
@@ -1793,6 +1805,7 @@ function stopAll() {
   setPlayBtn('play');
   setStatus('');
   showDisplay(false);
+  clearTransHighlight();
   resetBar();
   wordEls = []; words = []; sentenceOffsets = []; totalWords = 0; currentWordIdx = -1;
   fullText = '';
@@ -1811,7 +1824,28 @@ function highlightWord(idx) {
     wordEls[idx].classList.add('active');
     wordEls[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
+  highlightTransBlock(idx);
   updateBar(idx);
+}
+
+// 再生中の文に対応する訳文ブロックにも同じ黄色のマーカーを引く
+function highlightTransBlock(idx) {
+  document.querySelectorAll('.ja-block.playing').forEach(el => el.classList.remove('playing'));
+  const bi = blockOfSentence(idx);
+  if (bi < 0) return;
+  const el = document.querySelector('.ja-block[data-b="' + bi + '"]');
+  if (!el) return;
+  el.classList.add('playing');
+  const box = document.getElementById('trans-box');
+  // 訳文パネル内だけをスクロールさせる（ページ全体は動かさない）
+  const top = el.offsetTop - box.offsetTop;
+  if (top < box.scrollTop || top > box.scrollTop + box.clientHeight - 40) {
+    box.scrollTo({ top: Math.max(0, top - 40), behavior: 'smooth' });
+  }
+}
+
+function clearTransHighlight() {
+  document.querySelectorAll('.ja-block.playing').forEach(el => el.classList.remove('playing'));
 }
 
 /* ============================================================
