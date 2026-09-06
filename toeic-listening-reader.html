@@ -113,6 +113,94 @@
       border-color: #e2e8f0;
     }
 
+    /* click-to-link highlight (English sentence <-> Japanese sentence) */
+    .word.sentence { cursor: pointer; }
+    .ja-block { cursor: pointer; border-radius: 3px; }
+    @media (hover: hover) {
+      .word.sentence:hover, .ja-block:hover { background: #eef2ff; }
+    }
+    .word.sentence.linked, .ja-block.linked {
+      background: #bae6fd;
+      box-shadow: 0 0 0 2px #bae6fd;
+      color: #0f172a;
+    }
+    .word.active.linked {
+      background: #fef3c7;
+      box-shadow: 0 0 0 2px #fef3c7;
+    }
+
+    /* translation engine controls */
+    .engine-select {
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #4c1d95;
+      background: #f5f3ff;
+      border: 1.5px solid #ddd6fe;
+      border-radius: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      outline: none;
+    }
+    .engine-select:focus-visible { border-color: #7c3aed; }
+    .btn-gear:hover {
+      background: #f5f3ff;
+      color: #6d28d9;
+      border-color: #ddd6fe;
+    }
+    #ai-settings {
+      display: none;
+      border: 1.5px solid #ddd6fe;
+      background: #faf9ff;
+      border-radius: 10px;
+      padding: 12px 12px 10px;
+      margin-bottom: 10px;
+    }
+    #ai-settings.open { display: block; }
+    .ai-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #6d28d9;
+      margin-bottom: 5px;
+    }
+    #api-key-input {
+      width: 100%;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      color: #1e293b;
+      outline: none;
+    }
+    #api-key-input:focus { border-color: #7c3aed; }
+    .ai-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-save {
+      background: #7c3aed;
+      color: #fff;
+      border: 1.5px solid #7c3aed;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-save:active { transform: scale(0.96); }
+    .ai-note {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
     #en-textarea {
       display: block;
       width: 100%;
@@ -607,6 +695,31 @@
   <div class="panel">
     <div class="panel-head">
       <span class="panel-label">🇯🇵 日本語訳</span>
+      <div class="panel-head-right">
+        <select class="engine-select" id="engine-select" onchange="onEngineChange()" aria-label="翻訳エンジン">
+          <option value="free">かんたん翻訳（無料）</option>
+          <option value="ai">AI翻訳（Gemini）</option>
+        </select>
+        <button type="button" class="btn-reset btn-gear" id="btn-gear" onclick="toggleAiSettings()" title="AI翻訳の設定">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          設定
+        </button>
+      </div>
+    </div>
+    <div id="ai-settings">
+      <label class="ai-label" for="api-key-input">Gemini APIキー（Google AI Studio）</label>
+      <input id="api-key-input" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false">
+      <div class="ai-row">
+        <select class="engine-select" id="model-select" aria-label="モデル">
+          <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+          <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+          <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+        </select>
+        <button type="button" class="btn-reset" onclick="refreshModels()">モデルを取得</button>
+        <button type="button" class="btn-save" onclick="saveAiSettings()">保存する</button>
+        <button type="button" class="btn-reset" onclick="clearApiKey()">キーを削除</button>
+      </div>
+      <p class="ai-note">キーはこの端末のブラウザ内（localStorage）にだけ保存され、翻訳のたび generativelanguage.googleapis.com へ直接送信されます。共用の端末では使わないでください。無料枠には1分・1日あたりの回数制限があります。</p>
     </div>
     <div id="trans-box"><span class="trans-placeholder">英文を入力すると自動で翻訳されます</span></div>
   </div>
@@ -937,10 +1050,13 @@ textarea.addEventListener('input', () => {
   if (!t.trim()) { resetTransBox(); return; }
   document.getElementById('trans-box').innerHTML =
     '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
-  transTimer = setTimeout(() => doTranslate(t.trim()), 900);
+  transTimer = setTimeout(() => doTranslate(t.trim()), getEngine() === 'ai' ? 2000 : 900);
 });
 
 function resetTransBox() {
+  transBlocks = [];
+  linkedBlock = -1;
+  lastTransKey = '';
   document.getElementById('trans-box').innerHTML =
     '<span class="trans-placeholder">英文を入力すると自動で翻訳されます</span>';
 }
@@ -965,26 +1081,267 @@ function resetEnglish() {
   textarea.focus();
 }
 
-/* ---- 翻訳：長文を文単位のチャンクに分割して順に翻訳する ---- */
-let transToken = 0;
+/* ============================================================
+   翻訳エンジン（かんたん翻訳 / AI翻訳＝Gemini）
+   ============================================================ */
+const LS_ENGINE = 'reader-trans-engine';
+const LS_APIKEY = 'reader-gemini-key';
+const LS_MODEL  = 'reader-trans-model';
+const DEFAULT_MODEL = 'gemini-3.8-flash';
 
-function splitForTranslate(text, limit = 450) {
-  const parts = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
-  const chunks = [];
-  let buf = '';
-  for (const p of parts) {
-    if (buf && (buf + p).length > limit) { chunks.push(buf); buf = ''; }
-    if (p.length > limit) {
-      let rest = buf + p;
-      buf = '';
-      while (rest.length > limit) { chunks.push(rest.slice(0, limit)); rest = rest.slice(limit); }
-      buf = rest;
-    } else {
-      buf += p;
+function lsGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+function lsDel(k) { try { localStorage.removeItem(k); } catch {} }
+
+function getEngine() { return lsGet(LS_ENGINE) === 'ai' ? 'ai' : 'free'; }
+function getApiKey() { return (lsGet(LS_APIKEY) || '').trim(); }
+function getModel()  { return lsGet(LS_MODEL) || DEFAULT_MODEL; }
+
+const TRANS_SYSTEM_PROMPT = [
+  'あなたはビジネス・経済ニュースを専門とする日英翻訳者です。渡された英文を日本語に訳します。',
+  '',
+  '守ること：',
+  '- 文体は「である調」で統一する（です・ます調と混在させない）。',
+  '- 直訳ではなく日本語のニュース記事として自然な文にする。ただし情報の増減はしない。',
+  '- 多義語は文脈から正しい語義を選ぶ。とくに企業・金融ニュースでは次に注意する：',
+  '  close（取引が完了する／クロージング。「閉鎖」ではない）、deal（買収案件・契約）、',
+  '  supported by / backed by（〜を裏付け・担保とする）、securitization（証券化）、',
+  '  adjusted earnings（調整後利益）、barrels of oil equivalent per day（日量バレル・石油換算）。',
+  '- 主語と目的語を取り違えない。「何が何に対して増えるのか」を必ず原文どおりにする。',
+  '- 訳文だけを出力する。前置き、注釈、原文の再掲、見出しの追加はしない。'
+].join('\n');
+
+function buildNumberedPrompt(sents) {
+  return [
+    '以下の英文を日本語に訳してください。各文には [1] [2] のような通し番号が付いています。',
+    '同じ番号を行頭に付けたうえで、英文1文につき日本語1行、合計' + sents.length + '行で出力してください。',
+    '1文を複数行に分けたり、複数の文をまとめたりしないでください。',
+    '',
+    sents.map((s, i) => '[' + (i + 1) + '] ' + s).join('\n')
+  ].join('\n');
+}
+
+async function geminiRequest(promptText) {
+  const key = getApiKey();
+  if (!key) throw new Error('NO_KEY');
+
+  const res = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(getModel()) + ':generateContent',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: TRANS_SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: promptText }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }
+      })
     }
+  );
+
+  if (!res.ok) {
+    let detail = '';
+    try { const j = await res.json(); detail = (j.error && j.error.message) || ''; } catch {}
+    if (res.status === 400 && /api key/i.test(detail)) throw new Error('APIキーが正しくないようです');
+    if (res.status === 403) throw new Error('このAPIキーでは利用できません（権限を確認）');
+    if (res.status === 404) throw new Error('モデル「' + getModel() + '」が見つかりません');
+    if (res.status === 429) throw new Error('無料枠の上限に達しました。少し待ってください');
+    throw new Error('APIエラー ' + res.status + (detail ? '：' + detail.slice(0, 80) : ''));
   }
-  if (buf.trim()) chunks.push(buf);
-  return chunks;
+
+  const data = await res.json();
+  const cand = (data.candidates || [])[0];
+  const parts = (cand && cand.content && cand.content.parts) || [];
+  const out = parts.filter(p => p && p.text && !p.thought).map(p => p.text).join('').trim();
+  if (!out) throw new Error('空の応答が返りました');
+  return out;
+}
+
+function parseNumberedOutput(out, n) {
+  const arr = new Array(n).fill('');
+  out.split('\n').forEach(line => {
+    const m = line.match(/^\s*[\[［]\s*(\d+)\s*[\]］]\s*(.*)$/);
+    if (!m) return;
+    const i = Number(m[1]) - 1;
+    if (i >= 0 && i < n) arr[i] = (arr[i] + ' ' + m[2]).trim();
+  });
+  return arr.every(v => v) ? arr : null;
+}
+
+/* ---- 設定パネル ---- */
+function toggleAiSettings() {
+  document.getElementById('ai-settings').classList.toggle('open');
+}
+
+function saveAiSettings() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const model = document.getElementById('model-select').value;
+  if (key) { lsSet(LS_APIKEY, key); } else { lsDel(LS_APIKEY); }
+  lsSet(LS_MODEL, model);
+  setStatus(key ? 'APIキーを保存しました' : 'APIキーを削除しました');
+  document.getElementById('ai-settings').classList.remove('open');
+  const t = textarea.value.trim();
+  if (key && getEngine() === 'ai' && t) doTranslate(t);
+}
+
+function clearApiKey() {
+  lsDel(LS_APIKEY);
+  document.getElementById('api-key-input').value = '';
+  setStatus('APIキーを削除しました');
+}
+
+async function refreshModels() {
+  const key = document.getElementById('api-key-input').value.trim() || getApiKey();
+  if (!key) { setStatus('先にAPIキーを入力してください'); return; }
+  setStatus('モデル一覧を取得中…');
+  try {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+      headers: { 'x-goog-api-key': key }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    const names = (d.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => String(m.name || '').replace(/^models\//, ''))
+      .filter(n => /^gemini/.test(n) && !/embedding|image|tts|live|audio|vision/i.test(n));
+    if (!names.length) throw new Error('使えるモデルが見つかりません');
+    const sel = document.getElementById('model-select');
+    const cur = getModel();
+    sel.innerHTML = '';
+    names.forEach(n => {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      sel.appendChild(o);
+    });
+    sel.value = names.includes(cur) ? cur : names[0];
+    setStatus('モデル一覧を更新しました（' + names.length + '件）。保存を押すと確定します');
+  } catch (e) {
+    setStatus('モデル一覧を取得できませんでした（' + ((e && e.message) || '') + '）');
+  }
+}
+
+function onEngineChange() {
+  const engine = document.getElementById('engine-select').value;
+  lsSet(LS_ENGINE, engine);
+  if (engine === 'ai' && !getApiKey()) {
+    document.getElementById('ai-settings').classList.add('open');
+    setStatus('AI翻訳を使うにはAPIキーを保存してください');
+    return;
+  }
+  setStatus(engine === 'ai' ? 'AI翻訳に切り替えました' : 'かんたん翻訳に切り替えました');
+  const t = textarea.value.trim();
+  if (t) {
+    document.getElementById('trans-box').innerHTML =
+      '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
+    doTranslate(t);
+  }
+}
+
+function restoreTransSettings() {
+  document.getElementById('engine-select').value = getEngine();
+  const sel = document.getElementById('model-select');
+  const model = getModel();
+  if (!Array.from(sel.options).some(o => o.value === model)) {
+    const o = document.createElement('option');
+    o.value = model; o.textContent = model;
+    sel.appendChild(o);
+  }
+  sel.value = model;
+  const key = getApiKey();
+  if (key) document.getElementById('api-key-input').value = key;
+}
+
+/* ============================================================
+   訳文ブロック（英文の文番号と対応づけて保持する）
+   ============================================================ */
+let transBlocks = [];   // [{ idxs: [英文の文番号...], text: '訳文' }]
+let linkedBlock = -1;
+let linkHintShown = false;
+
+function blockOfSentence(i) {
+  return transBlocks.findIndex(b => b.idxs.indexOf(i) >= 0);
+}
+
+function renderTranslation() {
+  const box = document.getElementById('trans-box');
+  if (!transBlocks.length) { resetTransBox(); return; }
+  box.innerHTML = '';
+  transBlocks.forEach((b, bi) => {
+    const sp = document.createElement('span');
+    sp.className = 'ja-block' + (bi === linkedBlock ? ' linked' : '');
+    sp.dataset.b = String(bi);
+    sp.textContent = b.text;
+    box.appendChild(sp);
+    if (bi < transBlocks.length - 1) {
+      box.appendChild(document.createTextNode(sentenceMode ? '\n' : ''));
+    }
+  });
+}
+
+function clearLink() {
+  linkedBlock = -1;
+  document.querySelectorAll('.ja-block.linked, #en-display .linked')
+    .forEach(el => el.classList.remove('linked'));
+}
+
+function applyLink(bi, scrollTo) {
+  clearLink();
+  if (bi < 0 || bi >= transBlocks.length) return;
+  linkedBlock = bi;
+  const jaEl = document.querySelector('.ja-block[data-b="' + bi + '"]');
+  if (jaEl) jaEl.classList.add('linked');
+  transBlocks[bi].idxs.forEach(i => { if (wordEls[i]) wordEls[i].classList.add('linked'); });
+  if (scrollTo === 'ja' && jaEl) jaEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (scrollTo === 'en') {
+    const el = wordEls[transBlocks[bi].idxs[0]];
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+}
+
+// 英文パネルが編集用テキストエリアのままだと文を光らせられないので、表示に切り替える
+function ensureEnglishDisplay() {
+  const disp = document.getElementById('en-display');
+  if (disp.style.display === 'block') return true;
+  const t = textarea.value.trim();
+  if (!t) return false;
+  buildDisplay(t);
+  fullText = t;
+  showDisplay(true);
+  setStatus('英文を表示に切り替えました（貼り直すときは「クリア」）');
+  return true;
+}
+
+document.getElementById('en-display').addEventListener('click', (e) => {
+  const sp = e.target.closest('.word.sentence');
+  if (!sp) return;
+  const bi = blockOfSentence(Number(sp.dataset.i));
+  if (bi < 0) return;
+  if (bi === linkedBlock) { clearLink(); return; }
+  applyLink(bi, 'ja');
+});
+
+document.getElementById('trans-box').addEventListener('click', (e) => {
+  const sp = e.target.closest('.ja-block');
+  if (!sp) return;
+  const bi = Number(sp.dataset.b);
+  if (bi === linkedBlock) { clearLink(); return; }
+  if (!ensureEnglishDisplay()) { applyLink(bi); return; }
+  applyLink(bi, 'en');
+});
+
+/* ---- 翻訳の実行 ---- */
+let transToken = 0;
+let lastTransKey = '';
+
+function groupSentences(sents, limit) {
+  const groups = [];
+  let cur = [], len = 0;
+  for (const s of sents) {
+    if (cur.length && len + s.length + 1 > limit) { groups.push(cur); cur = []; len = 0; }
+    cur.push(s);
+    len += s.length + 1;
+  }
+  if (cur.length) groups.push(cur);
+  return groups;
 }
 
 async function gtxTranslate(chunk) {
@@ -1006,46 +1363,93 @@ async function myMemoryTranslate(chunk) {
   return d.responseData.translatedText;
 }
 
+// 文を改行でつないで送り、返ってきた行数が一致すれば1文＝1ブロックとして対応づける
+async function translateFreeAligned(sents, token, translator, limit) {
+  const groups = groupSentences(sents, limit);
+  let base = 0;
+  for (const g of groups) {
+    const out = await translator(g.join('\n'));
+    if (token !== transToken) return false;
+    const lines = out.split('\n').map(s => s.trim()).filter(Boolean);
+    if (lines.length === g.length) {
+      lines.forEach((t, k) => transBlocks.push({ idxs: [base + k], text: t }));
+    } else {
+      transBlocks.push({ idxs: g.map((_, k) => base + k), text: out.replace(/\n/g, '') });
+    }
+    base += g.length;
+    renderTranslation();
+  }
+  return true;
+}
+
 async function doTranslate(text) {
   const box = document.getElementById('trans-box');
   const token = ++transToken;
-  const chunks = splitForTranslate(text);
-  const out = [];
+  const sents = splitIntoSentences(text);
+  clearLink();
 
-  // Primary: Google Translate unofficial endpoint（チャンクごと）
-  try {
-    for (const c of chunks) {
-      const t = await gtxTranslate(c);
+  // AI翻訳（Gemini）：全文をまとめて1回で訳すので文脈を取り違えにくい
+  if (getEngine() === 'ai' && getApiKey()) {
+    const cacheKey = 'ai|' + getModel() + '|' + text;
+    if (cacheKey === lastTransKey && transBlocks.length) { renderTranslation(); return; }
+    try {
+      const out = await geminiRequest(buildNumberedPrompt(sents));
       if (token !== transToken) return;
-      out.push(t);
-      box.textContent = out.join('');
+      const arr = parseNumberedOutput(out, sents.length);
+      transBlocks = arr
+        ? arr.map((t, i) => ({ idxs: [i], text: t }))
+        : [{ idxs: sents.map((_, i) => i), text: out }];
+      lastTransKey = cacheKey;
+      renderTranslation();
+      showLinkHint();
+      return;
+    } catch (e) {
+      if (token !== transToken) return;
+      const msg = (e && e.message === 'NO_KEY') ? 'APIキーが未設定です' : ((e && e.message) || '接続できません');
+      setStatus('AI翻訳に失敗（' + msg + '）→ かんたん翻訳に切り替えます');
+      box.innerHTML = '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
     }
+  }
+
+  // かんたん翻訳：Google の公開エンドポイント
+  transBlocks = [];
+  try {
+    await translateFreeAligned(sents, token, gtxTranslate, 1200);
+    if (token !== transToken) return;
+    showLinkHint();
     return;
   } catch {
     /* fall through */
   }
 
-  // Fallback: MyMemory（1回500文字制限なのでチャンク必須）
+  // フォールバック：MyMemory（1回500文字制限）
   if (token !== transToken) return;
-  out.length = 0;
+  transBlocks = [];
   box.innerHTML = '<span class="trans-loading"><span class="spinner"></span>翻訳中…</span>';
   try {
-    for (const c of chunks) {
+    await translateFreeAligned(sents, token, async (c) => {
       const t = await myMemoryTranslate(c);
-      if (token !== transToken) return;
-      out.push(t);
-      box.textContent = out.join('');
       await new Promise(r => setTimeout(r, 300));
-    }
+      return t;
+    }, 420);
+    if (token !== transToken) return;
+    showLinkHint();
   } catch {
     if (token !== transToken) return;
-    if (out.length) {
-      box.textContent = out.join('') + ' …（以降の翻訳に失敗しました）';
+    if (transBlocks.length) {
+      renderTranslation();
+      setStatus('一部の翻訳に失敗しました');
     } else {
       box.innerHTML =
         '<span class="trans-error">⚠️ 翻訳に失敗しました。ネットワーク接続を確認してください。</span>';
     }
   }
+}
+
+function showLinkHint() {
+  if (linkHintShown) return;
+  linkHintShown = true;
+  setStatus('文をタップすると、英文と訳文の対応する部分が水色になります');
 }
 
 /* ============================================================
@@ -1122,6 +1526,10 @@ function buildDisplay(text) {
   words.forEach((sentence, idx) => {
     const sp = document.createElement('span');
     sp.className = 'word sentence';
+    sp.dataset.i = String(idx);
+    if (linkedBlock >= 0 && transBlocks[linkedBlock] && transBlocks[linkedBlock].idxs.indexOf(idx) >= 0) {
+      sp.classList.add('linked');
+    }
     sp.textContent = sentence;
     display.appendChild(sp);
     wordEls.push(sp);
@@ -1422,6 +1830,7 @@ function toggleSentenceMode() {
   sentenceMode = !sentenceMode;
   saveSentenceMode();
   updateSentenceModeButton();
+  if (transBlocks.length) renderTranslation();
   const text = textarea.value.trim();
   const display = document.getElementById('en-display');
 
@@ -1526,6 +1935,7 @@ function setStatus(msg) {
 restoreSpeedChoice();
 restoreSentenceMode();
 restoreTracking();
+restoreTransSettings();
 </script>
 </body>
 </html>
